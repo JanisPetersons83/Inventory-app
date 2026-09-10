@@ -127,27 +127,27 @@ body {
 }
 #table th:nth-child(1),
 #table td:nth-child(1) {
-    width: 30px;
+    width: 20px;
 }
 #table th:nth-child(2),
 #table td:nth-child(2) {
-width: 15px;
+width: 10px;
 }
 #table th:nth-child(3),
 #table td:nth-child(3) {
-width: 50px;
+width: 30px;
 }
 #table th:nth-child(4),
 #table td:nth-child(4) {
-width: 20px;
+width: 10px;
 }
 #table th:nth-child(5),
 #table td:nth-child(5) {
-width: 20px;
+width: 15px;
 }
 #table th:nth-child(6),
 #table td:nth-child(6) {
-width: 30px;
+width: 20px;
 }
 #table {
 min-width: 700px;
