@@ -1002,12 +1002,12 @@ background-color: #fff8d6 !important;
     /* Apgabals */
     #table th:nth-child(1),
     #table td:nth-child(1) {
-        width: 13%;
+        width: 14%;
     }
     /* Pakas */
     #table th:nth-child(2),
     #table td:nth-child(2) {
-        width: 10%;
+        width: 9%;
     }
     /* Izmērs */
     #table th:nth-child(3),
