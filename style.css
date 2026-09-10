@@ -73,7 +73,7 @@ body {
 }
 #locationSelect {
     width: min(90vw, 500px);
-    margin: 0 auto;
+    margin: 40px auto 0;
 }
 #locationSelect input,
 #locationSelect button {
