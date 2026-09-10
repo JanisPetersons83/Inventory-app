@@ -127,31 +127,32 @@ body {
 }
 #table th:nth-child(1),
 #table td:nth-child(1) {
-    width: 15px;
+    width: 85px;
 }
 #table th:nth-child(2),
 #table td:nth-child(2) {
-width: 8px;
+    width: 65px;
 }
 #table th:nth-child(3),
 #table td:nth-child(3) {
-width: 20px;
+    width: 190px;
 }
 #table th:nth-child(4),
 #table td:nth-child(4) {
-width: 8px;
+    width: 100px;
 }
 #table th:nth-child(5),
 #table td:nth-child(5) {
-width: 8px;
+    width: 100px;
 }
 #table th:nth-child(6),
 #table td:nth-child(6) {
-width: 12px;
+    width: 160px;
 }
 #table {
-min-width: 700px;
-table-layout: fixed;
+    width: 700px;
+    min-width: 700px;
+    table-layout: fixed;
 }
 #table td,
 #table th {
@@ -983,4 +984,69 @@ background-color: #fff8d6 !important;
     display: block;
     margin: 4px 0;
     white-space: nowrap;
+}
+/* =======================================
+   TABULA TELEFONĀ
+======================================= */
+@media (max-width: 480px) {
+    #tableContainer,
+    .tableScroll {
+        width: 100%;
+        overflow-x: hidden;
+    }
+    #table {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+    }
+    /* Apgabals */
+    #table th:nth-child(1),
+    #table td:nth-child(1) {
+        width: 13%;
+    }
+    /* Pakas */
+    #table th:nth-child(2),
+    #table td:nth-child(2) {
+        width: 10%;
+    }
+    /* Izmērs */
+    #table th:nth-child(3),
+    #table td:nth-child(3) {
+        width: 27%;
+    }
+    /* Gabali */
+    #table th:nth-child(4),
+    #table td:nth-child(4) {
+        width: 13%;
+    }
+    /* m3 */
+    #table th:nth-child(5),
+    #table td:nth-child(5) {
+        width: 15%;
+    }
+    /* Darbības */
+    #table th:nth-child(6),
+    #table td:nth-child(6) {
+        width: 22%;
+    }
+    #table th,
+    #table td {
+        padding: 5px 2px;
+        font-size: 11px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    #table th:first-child,
+    #table td:first-child {
+        text-align: left;
+        padding-left: 4px;
+    }
+    #table button {
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        margin: 1px;
+        font-size: 13px;
+    }
 }
