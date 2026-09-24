@@ -1224,7 +1224,7 @@ function add() {
             return error(
                 "Nepareizs gads", "year");
         }
-        if (!isMixedMode && !document.getElementById("grade").value)
+        if (!document.getElementById("grade").value)
                 return error("Izvēlies šķiru", "gradeBtn");
             let rawLength = document.getElementById("length").value.trim();
         if (isGaliMode) {rawLength = "gali";}
@@ -1332,8 +1332,7 @@ function add() {
       document.getElementById("name").value,
     code: isMixedMode ? "" :
       document.getElementById("productCode").value,
-    grade: isMixedMode ? "" :
-      document.getElementById("grade").value,
+    grade: document.getElementById("grade").value,
     comment: isMixedMode ? "Dažādi" :
       document.getElementById("comment").value,
     m3Pack: m3PerPack,
@@ -2240,7 +2239,7 @@ ws.addRow([]);
     // L — Gads
       e.year < 100 ? "20" + e.year : e.year,
     // M — Šķira
-      e.mode === "mixed" ? "" : e.grade,
+      e.grade,
     // N — Komentārs
       e.comment,
     // O — Gali
