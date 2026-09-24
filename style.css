@@ -1050,3 +1050,40 @@ background-color: #fff8d6 !important;
         font-size: 13px;
     }
 }
+/* Jaukta materiāla paletes ievade */
+#materialSizeRow {
+    grid-template-columns: minmax(0,1fr) 
+    minmax(0,1fr) auto;
+}
+#materialSizeRow input {
+    min-width:0; 
+    width:100%;
+    box-sizing:border-box; }
+#mixedBtn {
+    width:auto;
+    white-space:nowrap;
+    padding:10px 12px;
+}
+#mixedBtn.active {
+    background:#1f4e46;
+    color:white;
+}
+.mixedInputs {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    margin:12px 0;
+}
+.mixedInputs input {
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+}
+@media(max-width:420px){
+    #materialSizeRow {
+        gap:6px; }
+    #mixedBtn {
+        padding:8px 6px;
+        font-size:13px; 
+    }
+}
