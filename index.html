@@ -169,6 +169,12 @@
                     inputmode="numeric"
                     min="0" step="1" 
                     placeholder="Platums(mm) *">
+            <button type="button" 
+                    id="mixedBtn" 
+                    onclick="toggleMixed()" 
+                    aria-pressed="false">
+                📦 Dažādi
+            </button>
         </div> 
         <div id="sizeSuggestions"></div>
         <div class="row">
@@ -185,6 +191,37 @@
                 </button>
             </div>
        </div>
+        
+        <!-- Dažādi (pakas izmēri) -->
+        <div id="mixedInputs" 
+                class="mixedInputs" 
+                style="display:none">
+            <input id="mixedLength" 
+                    type="number" 
+                    inputmode="decimal" 
+                    min="1" 
+                    step="any" 
+                    placeholder="Paletes garums (mm) *">
+            <input id="mixedWidth" 
+                    type="number" 
+                    inputmode="decimal" 
+                    min="1" 
+                    step="any" 
+                    placeholder="Paletes platums (mm) *">
+            <input id="mixedHeight" 
+                    type="number" 
+                    inputmode="decimal" 
+                    min="1" 
+                    step="any" 
+                    placeholder="Paletes augstums (mm) *">
+            <input id="mixedFill" 
+                    type="number" 
+                    inputmode="decimal" 
+                    min="0.01" 
+                    max="100" 
+                    step="any" 
+                    placeholder="Aizpildījums (%) *">
+        </div>
         
         <!-- GALI (pakas izmēri) -->
         
