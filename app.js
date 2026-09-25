@@ -32,6 +32,7 @@ let photoBusy = false;
                 }, 350);
             }, 2000);
     });
+
 function loadAreaPhotos() {
     try {const saved = localStorage.getItem("areaPhotos");
         if (!saved) {areaPhotos = {};
@@ -92,10 +93,7 @@ function handleAreaChange() {
     //✅ Iepriekšējam apgabalam ir dati, bet nav foto          
         if (hasEntries && !hasPhoto
             ) {
-            console.log(
-                "📷 Foto pieprasījums:",
-                previousArea
-            );
+            console.log("📷 Foto pieprasījums:", previousArea);
             const addPhoto = confirm(
                 `Apgabalam ${previousArea} nav foto.\n\n` +
                 `Vai vēlies pievienot foto?`
@@ -113,10 +111,8 @@ function handleAreaChange() {
             currentArea = newArea;
             previousArea = newArea;
             photoTargetArea = newArea;
-        console.log("📍 Aktīvais apgabals:",
-            currentArea);
-        console.log("📷 Foto:",
-            hasAreaPhoto(currentArea)
+        console.log("📍 Aktīvais apgabals:", currentArea);
+        console.log("📷 Foto:", hasAreaPhoto(currentArea)
                 ? "IR"
                 : "NAV");
         renderAreaPhotoPanel(currentArea);
@@ -133,15 +129,13 @@ function saveAreaPhoto(event) {
             return;
         }
     const targetArea = photoTargetArea || currentArea;
-        if (!targetArea) {showNotice("⚠️ Nav izvēlēts apgabals!",
-                            "error");
+        if (!targetArea) {showNotice("⚠️ Nav izvēlēts apgabals!", "error");
             input.value = "";
         return;
         }
     //✅ Pārbauda faila tipu
         if (!file.type.startsWith("image/")) {
-            showNotice("❌ Lūdzu izvēlies attēla failu!",
-                "error");
+            showNotice("❌ Lūdzu izvēlies attēla failu!", "error");
             input.value = "";
         return;
         }
@@ -469,7 +463,9 @@ function renderDimensionAnalysis() {
                 <tr class="detailRow">
                     <td colspan="3">
                         ${row.area} |
-                        ${row.mode === "mixed" ? "Dažādi" : row.grade} |
+                        ${row.mode === "mixed"
+                            ? (row.grade || "Dažādi")
+                            : row.grade} |
                         ${lengthText} |
                         ${row.packages} pal. |
                         ${row.mode === "mixed" ? "" : `${row.pieces} gab. |`}
@@ -584,9 +580,9 @@ function setMixedMode(active) {
     document.getElementById("galiBtn").classList.remove("active");
     document.getElementById("galiInputs").style.display = "none";
     document.getElementById("calcInfo").style.display = "none";
-    const suggestions = document.getElementById("sizeSuggestions");
-    suggestions.innerHTML = "";
-    suggestions.style.display = "none";
+        const suggestions = document.getElementById("sizeSuggestions");
+            suggestions.innerHTML = "";
+            suggestions.style.display = "none";
 }
 function toggleMixed() {
     setMixedMode(!isMixedMode);
@@ -618,8 +614,7 @@ function validateDimensionFields() {
     const thicknessField = document.getElementById("thickness");
     const widthField = document.getElementById("width");
     if (!thicknessField || !widthField) {
-        return;
-    }
+        return;}
     const thickness = thicknessField.value.trim();
     const width = widthField.value.trim();
     const library = Array.isArray(dimensionsLibrary)
@@ -705,10 +700,8 @@ function showSizeSuggestions() {
         div.textContent = size;
         div.onclick = () => {
     const parts = size.split("x");
-        document.getElementById("thickness").value =
-              parts[0];
-        document.getElementById("width").value =
-              parts[1];
+        document.getElementById("thickness").value = parts[0];
+        document.getElementById("width").value = parts[1];
         container.innerHTML = "";
         container.style.display = "none";
             validateDimensionFields();
@@ -849,32 +842,18 @@ function initImageGestures() {
             x: event.clientX,
             y: event.clientY
         });
-        if (
-            mapImagePointers.size >= 2 &&
-            mapPinchStartDistance > 0
-            ) {
-    const distance = getImagePointerDistance();
-    const center = getImagePointerCenter();
-        mapImageScale = limitImageScale(
-        mapPinchStartScale *
-        (distance / mapPinchStartDistance)
-        );
-        mapImageTranslateX = mapPinchStartTranslateX +
-            (center.x - mapPinchStartCenterX);
-        mapImageTranslateY = mapPinchStartTranslateY +
-            (center.y - mapPinchStartCenterY);
-        applyImageTransform();
-        return;
-            }
-        if (
-            mapImagePointers.size === 1 &&
-            mapImageScale > 1
-            ) {
-            mapImageTranslateX = event.clientX -
-                mapImageDragOffsetX;
-            mapImageTranslateY = event.clientY -
-                mapImageDragOffsetY;
-        applyImageTransform();
+        if (mapImagePointers.size >= 2 && mapPinchStartDistance > 0) {
+            const distance = getImagePointerDistance();
+            const center = getImagePointerCenter();
+                mapImageScale = limitImageScale(mapPinchStartScale * (distance / mapPinchStartDistance));
+                mapImageTranslateX = mapPinchStartTranslateX + (center.x - mapPinchStartCenterX);
+                mapImageTranslateY = mapPinchStartTranslateY + (center.y - mapPinchStartCenterY);
+                    applyImageTransform();
+            return;}
+        if (mapImagePointers.size === 1 && mapImageScale > 1) {
+            mapImageTranslateX = event.clientX - mapImageDragOffsetX;
+            mapImageTranslateY = event.clientY - mapImageDragOffsetY;
+                applyImageTransform();
             }
     });
     function finishImagePointer(event) {
@@ -885,10 +864,8 @@ function initImageGestures() {
             const remaining = Array.from(
                 mapImagePointers.values()
             )[0];
-            mapImageDragOffsetX = remaining.x -
-            mapImageTranslateX;
-            mapImageDragOffsetY = remaining.y -
-            mapImageTranslateY;
+            mapImageDragOffsetX = remaining.x - mapImageTranslateX;
+            mapImageDragOffsetY = remaining.y - mapImageTranslateY;
             }
         if (mapImagePointers.size === 0) {
             mapPinchStartDistance = 0;
@@ -1010,15 +987,11 @@ function saveRecentUser(name) {
             const saved = JSON.parse(localStorage.getItem("recentUsers") || "[]");
                 users = Array.isArray(saved)
                 ? saved.filter(user =>
-                    typeof user === "string" &&
-                    user.trim()
+                    typeof user === "string" && user.trim()
                 )
             : [];
-    } catch (error) {
-        console.warn(
-            "Lietotāju vēsturi neizdevās nolasīt:",
-            error
-        );
+        } catch (error) {
+        console.warn("Lietotāju vēsturi neizdevās nolasīt:", error);
         users = [];
     }
     //✅ Novērš viena lietotāja atkārtošanos
@@ -1047,12 +1020,10 @@ function getRecentUsers() {
         if (!Array.isArray(saved)) {
             return [];}
         return saved.filter(user =>
-            typeof user === "string" &&
-            user.trim()
+            typeof user === "string" && user.trim()
         );
     } catch (error) {
-        console.warn("Neizdevās ielādēt lietotāju sarakstu:",
-            error);
+        console.warn("Neizdevās ielādēt lietotāju sarakstu:", error);
         return [];
     }
 }
@@ -1064,18 +1035,16 @@ function loadRecentUsers(filterText = "") {
     const search = String(filterText)
         .trim()
         .toLowerCase();
-    const users = getRecentUsers().filter(user =>
-        user.toLowerCase().includes(search)
-    );
-    list.innerHTML = "";
+    const users = getRecentUsers().filter(user => user.toLowerCase().includes(search));
+        list.innerHTML = "";
     if (users.length === 0) {
         list.style.display = "none";
         return;
     }
     users.forEach(user => {
         const row = document.createElement("div");
-        row.className = "recent-user-row";
-        // Lietotāja izvēles poga
+            row.className = "recent-user-row";
+    //✅ Lietotāja izvēles poga
         const selectButton = document.createElement("button");
         selectButton.type = "button";
         selectButton.className = "recent-user-option";
@@ -1088,7 +1057,7 @@ function loadRecentUsers(filterText = "") {
             }
             list.style.display = "none";
         });
-        // Dzēšanas poga
+    //✅ Dzēšanas poga
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
         deleteButton.className = "recent-user-delete";
@@ -1158,7 +1127,7 @@ function safeFileName(text) {
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-zA-Z0-9]/g, "_");
 }
-// ✅ AUTOMĀTISKI GADS
+// ✅ Automātiski gads
 function updateYearFromMonth() {
     const month = Number(document.getElementById("month").value);
         if (!month) return;
@@ -1186,7 +1155,7 @@ function getFullYear(yearValue) {
         }
     return null;
 }
-// ✅ PIEVIENO IERAKSTU
+// ✅ Pievieno ierakstu
 function add() {
     const areaVal = document.getElementById("area").value.trim();
     const packagesVal = Number(document.getElementById("packages").value);
@@ -1286,13 +1255,11 @@ function add() {
     const piecesFront = piecesAcrossWidth * piecesAcrossHeight;
     const columns = Math.floor(packLength / avgLength);
     const efficiency = 0.95;
-        piecesPerPack = Math.max(1,
-            Math.floor(piecesFront * columns * efficiency)
+        piecesPerPack = Math.max(1, Math.floor(piecesFront * columns * efficiency)
         );
     //✅ Parāda ar ≈
-        document.getElementById("pieces").value =
-          "≈ " + piecesPerPack;
-        totalM3 = m3PerPack * packagesVal;
+        document.getElementById("pieces").value = "≈ " + piecesPerPack;
+            totalM3 = m3PerPack * packagesVal;
       } else {
     // Parastais režīms
     const lengthNum = Number(rawLength);
@@ -1328,13 +1295,10 @@ function add() {
               (isGaliMode ? "gali" : "standard"),
     pieces: piecesPerPack,
     avgLength: avgLength,
-    name: isMixedMode ? "" :
-      document.getElementById("name").value,
-    code: isMixedMode ? "" :
-      document.getElementById("productCode").value,
+    name: document.getElementById("name").value,
+    code: document.getElementById("productCode").value,
     grade: document.getElementById("grade").value,
-    comment: isMixedMode ? "Dažādi" :
-      document.getElementById("comment").value,
+    comment: document.getElementById("comment").value,
     m3Pack: m3PerPack,
     total: totalM3
   };
@@ -1359,22 +1323,17 @@ function add() {
       "success"
     );
   }
-  // ==========================================
-  // SAGLABĀŠANA
-  // ==========================================
+  //✅ Saglabāšana
   localStorage.setItem(
     "data",
     JSON.stringify(data)
   );
   saveBackup();
-  // ==========================================
-  // FORMAS ATTĪRĪŠANA
-  // ==========================================
+  //✅ Formas attīrīšana
   clearError();
   render();
   clearForm();
-  document.getElementById("galiInputs").style.display =
-    "none";
+  document.getElementById("galiInputs").style.display = "none";
 }
 // ✅ Atcelt
 function cancelEdit() {
@@ -1390,136 +1349,119 @@ function cancelEdit() {
       "info"
       );
 }
-
-// ✅ TABULA
+// ✅ Tabula
 function render() {
-  let html = `
-    <tr>
-      <th>Apgabals</th>
-      <th>Pakas</th>
-      <th>Izmērs</th>
-      <th>Gabali</th>
-      <th>m3</th>
-      <th>Darbības</th>
-    </tr>`;
-  
-  let totalPackages = 0;
-  let totalM3 = 0;
-  
-[...data]
-.map((e, i) => ({ e, i }))
-.reverse()
-.forEach(({ e, i }) => {
-
-    totalPackages += e.packages || 0;
-    totalM3 += e.total || 0;
-  let size;
-    if (e.mode === "mixed") {
-    size = `Dažādi (${e.packLength}×${e.packWidth}×${e.packHeight} mm; ${e.mixedFill}%)`;
+    let html = `
+        <tr>
+            <th>Apgabals</th>
+            <th>Pakas</th>
+            <th>Izmērs</th>
+            <th>Gabali</th>
+            <th>m3</th>
+            <th>Darbības</th>
+        </tr>`;
+    let totalPackages = 0;
+    let totalM3 = 0;
+        [...data]
+        .map((e, i) => ({ e, i }))
+        .reverse()
+        .forEach(({ e, i }) => {
+            totalPackages += e.packages || 0;
+            totalM3 += e.total || 0;
+    let size;
+        if (e.mode === "mixed") {
+            size = `Dažādi (${e.packLength}×${e.packWidth}×${e.packHeight} mm; ${e.mixedFill}%)`;
         } else if ((e.length || "").trim().toLowerCase() === "gali") {
             size = `${e.packWidth}×${e.packLength}×${e.packHeight}`;
         } else {
-    size = `${e.thickness}×${e.width}×${e.length}`;
+            size = `${e.thickness}×${e.width}×${e.length}`;
         }
-  html += `
-  <tr>
-    <td>${e.area}</td>
-    <td>${e.packages}</td>
-    <td>${size}</td>
-    <td>${e.pieces || ""}</td>
-    <td>${e.total?.toFixed(4) || ""}</td>
-    <td>
-      <button onclick="edit(${i})">✏️</button>
-      <button onclick="remove(${i})">🗑️</button>
-    </td>
-  </tr>`;
-});
-
-// ✅ KOPSUMMA (vienreiz!)
-html += `
-<tr style="font-weight:bold; background:#eee;">
-  <td>Kopā:</td>
-  <td>${totalPackages}</td>
-  <td></td>
-  <td></td>
-  <td>${totalM3.toFixed(4)}</td>
-</tr>`;  
-  document.getElementById("table").innerHTML = html;
+            html += `
+                <tr>
+                    <td>${e.area}</td>
+                    <td>${e.packages}</td>
+                    <td>${size}</td>
+                    <td>${e.pieces || ""}</td>
+                    <td>${e.total?.toFixed(4) || ""}</td>
+                    <td>
+                    <button onclick="edit(${i})">✏️</button>
+                    <button onclick="remove(${i})">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+    // ✅ Kopsumma (vienreiz!)
+            html += `
+                <tr style="font-weight:bold; background:#eee;">
+                    <td>Kopā:</td>
+                    <td>${totalPackages}</td>
+                    <td></td>
+                    <td></td>
+                    <td>${totalM3.toFixed(4)}</td>    
+                </tr>`;  
+            document.getElementById("table").innerHTML = html;
 }
-
-// ✅ DELETE
+    // ✅ Delete
 function remove(i) {
-  data.splice(i, 1);
-  dataChanged = true;
-  localStorage.setItem("data", JSON.stringify(data));
+    data.splice(i, 1);
+    dataChanged = true;
+    localStorage.setItem("data", JSON.stringify(data));
   render();
 }
-
-
-// ✅ EDIT
-
+// ✅ Edit
 function edit(i) {
-
-  const e = data[i];
-    clearForm(false);
-    setMixedMode(e.mode === "mixed");
-  /*updateGradeColor();*/
-  
+    const e = data[i];
+        clearForm(false);
+        setMixedMode(e.mode === "mixed");
+        /*updateGradeColor();*/
   // ✅ atceramies kuru ierakstu labo
-  editIndex = i;
-
-    document.getElementById("area").value = e.area;
-    document.getElementById("packages").value = e.packages;
-    document.getElementById("thickness").value = e.thickness;
-    document.getElementById("width").value = e.width;
-    document.getElementById("length").value = e.length;
-    document.getElementById("month").value = e.month;
-    document.getElementById("year").value = Number(e.year);
-    document.getElementById("pieces").value = e.pieces;
-    document.getElementById("name").value = e.name;
-    document.getElementById("productCode").value = e.code;
-        if (e.mode !== "mixed") {
-    document.getElementById("grade").value = e.grade;
+        editIndex = i;
+            document.getElementById("area").value = e.area;
+            document.getElementById("packages").value = e.packages;
+            document.getElementById("thickness").value = e.thickness;
+            document.getElementById("width").value = e.width;
+            document.getElementById("length").value = e.length;
+            document.getElementById("month").value = e.month;
+            document.getElementById("year").value = Number(e.year);
+            document.getElementById("pieces").value = e.pieces;
+            document.getElementById("name").value = e.name;
+            document.getElementById("productCode").value = e.code;
+            document.getElementById("grade").value = e.grade || "";
         }
-  const selectedItem = document.querySelector(
-      `.item[data-value="${e.grade}"]`
+    const selectedItem = document.querySelector(
+        `.item[data-value="${e.grade}"]`
       );
-  if (selectedItem) {
-    document.getElementById("gradeBtn").innerHTML =
-      selectedItem.innerHTML + " ▼";
-    }
-    document.getElementById("comment").value = e.comment;
-  if (e.mode === "mixed") {
-    document.getElementById("mixedLength").value = e.packLength ?? "";
-    document.getElementById("mixedWidth").value = e.packWidth ?? "";
-    document.getElementById("mixedHeight").value = e.packHeight ?? "";
-    document.getElementById("mixedFill").value = e.mixedFill ?? "";
-    }
-  if ((e.length || "").toLowerCase() === "gali") {
-    isGaliMode = true;
-      document.getElementById("length").disabled = true;
-      document.getElementById("galiBtn").classList.add("active");
-      document.getElementById("galiInputs").style.display = "block";
-
-      document.getElementById("packWidth").value = e.packWidth;
-      document.getElementById("packLength").value = e.packLength;
-      document.getElementById("packHeight").value = e.packHeight;
-      document.getElementById("avgLength").value = e.avgLength || "";
-    } else {
-    isGaliMode = false;
-      document.getElementById("length").disabled = e.mode === "mixed";
-      document.getElementById("galiBtn").classList.remove("active");
-      document.getElementById("galiInputs").style.display = "none";
-  }
-
-  // ✅ poga pāriet labošanas režīmā 
-document.getElementById("addBtn").innerText =
-  "💾 Saglabāt labojumu";
-  
-document.getElementById("cancelEditBtn").style.display =
-  "inline-block";
+        if (selectedItem) {
+            document.getElementById("gradeBtn").innerHTML =
+            selectedItem.innerHTML + " ▼";
+        }
+            document.getElementById("comment").value = e.comment;
+        if (e.mode === "mixed") {
+            document.getElementById("mixedLength").value = e.packLength ?? "";
+            document.getElementById("mixedWidth").value = e.packWidth ?? "";
+            document.getElementById("mixedHeight").value = e.packHeight ?? "";
+            document.getElementById("mixedFill").value = e.mixedFill ?? "";
+        }
+        if ((e.length || "").toLowerCase() === "gali") {
+            isGaliMode = true;
+            document.getElementById("length").disabled = true;
+            document.getElementById("galiBtn").classList.add("active");
+            document.getElementById("galiInputs").style.display = "block";
+            document.getElementById("packWidth").value = e.packWidth;
+            document.getElementById("packLength").value = e.packLength;
+            document.getElementById("packHeight").value = e.packHeight;
+            document.getElementById("avgLength").value = e.avgLength || "";
+        } else {
+            isGaliMode = false;
+            document.getElementById("length").disabled = e.mode === "mixed";
+            document.getElementById("galiBtn").classList.remove("active");
+            document.getElementById("galiInputs").style.display = "none";
+        }
+    // ✅ poga pāriet labošanas režīmā 
+            document.getElementById("addBtn").innerText =
+                "💾 Saglabāt labojumu";
+            document.getElementById("cancelEditBtn").style.display =
+                "inline-block";
 }
-
 window.onload = () => {
     clearForm(false);
     document.getElementById("year").value = "";
@@ -1541,48 +1483,23 @@ window.onload = () => {
                 document
                     .getElementById("restoreInfo")
                     .innerHTML = `
-                        Ražotne:
-                        ${backup.location || ""}<br>
-
-                        Lietotājs:
-                        ${backup.user || ""}<br><br>
-
+                        Ražotne: ${backup.location || ""}<br>
+                        Lietotājs: ${backup.user || ""}<br><br>
                         📊 Inventarizācija<br>
-
-                        Ieraksti:
-                        ${backup.summary?.entries || 0}<br>
-
-                        Paletes:
-                        ${backup.summary?.packages || 0}<br>
-
-                        m³:
-                        ${Number(
-                            backup.summary?.totalM3 || 0
-                        ).toFixed(4)}<br><br>
-
-                        Datums:<br>
-                        ${new Date(
-                            backup.timestamp
-                        ).toLocaleString()}
-                    `;
-
+                        Ieraksti: ${backup.summary?.entries || 0}<br>
+                        Paletes: ${backup.summary?.packages || 0}<br>
+                        m³: ${Number(backup.summary?.totalM3 || 0).toFixed(4)}<br><br>
+                        Datums:<br> ${new Date(backup.timestamp).toLocaleString()} `;
                 document
                     .getElementById("restoreModal")
                     .style.display = "block";
             }
         } catch (error) {
-            console.warn(
-                "Bojāts lokālais backup:",
-                error
-            );
-
-            localStorage.removeItem(
-                "backupData"
-            );
+            console.warn("Bojāts lokālais backup:", error);
+            localStorage.removeItem("backupData");
         }
     }
-  // ✅ KOMENTĀRU IZVĒLNE
-
+  // ✅ Komentāru izvēlne
       document.getElementById("thickness")
         .addEventListener("input", showSizeSuggestions);
       document.getElementById("thickness")
@@ -1598,89 +1515,77 @@ window.onload = () => {
       document.getElementById("commentPreset")
         .addEventListener("change", 
     function() {
-      if (this.value === "Cits") {
-        document.getElementById("comment").focus();
-      } else {
-        document.getElementById("comment").value =
-      this.value;
-      }
+        if (this.value === "Cits") {
+            document.getElementById("comment").focus();
+        } else {
+            document.getElementById("comment").value =
+        this.value;
+        }
     });
-  const savedLibrary = localStorage.getItem("dimensionsLibrary");
-
-//  ✅ DIMENSIJU BIB IELĀDE
+    const savedLibrary = localStorage.getItem("dimensionsLibrary");
+    //✅ Dimensiju bibliotēkas ielāde
   if (savedLibrary) {
     dimensionsLibrary = JSON.parse(savedLibrary);
   }  
-//  ✅ MĒNESIS - GADS
-  document.getElementById("month")
-    .addEventListener("input", updateYearFromMonth);
-  document.getElementById("month")
-    .addEventListener("change", updateYearFromMonth);;
-// ✅ IZVĒLNE
-
-const gradeBtn = document.getElementById("gradeBtn");
-const menu = document.querySelector(".menu");
-const gradeInput = document.getElementById("grade");
-
-  gradeBtn.addEventListener("click", () => {
-    menu.style.display = menu.style.display === "block"
-        ? "none"
-        : "block";
-    });
-  document.querySelectorAll(".menu .item")
-    .forEach(item => {
-      item.addEventListener("click", () => {
-        gradeInput.value = item.dataset.value;
-        gradeBtn.innerHTML = item.innerHTML + " ▼";
-        menu.style.display = "none";
-  });
-});
-
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".dropdown")) {
-    menu.style.display = "none";
-  }
-});
-    
-document.addEventListener("click", event => {
-    const wrapper = event.target.closest(".user-name-wrapper");
-    const list = document.getElementById("recentUsersList");
-    if (!wrapper && list) {
-        list.style.display = "none";
-    }
-});
-    
-  //✅ LOGIN CHECK
-  if (location && name) {
-    currentLocation = location;
-
-    document.getElementById("locationSelect")
-        .style.display = "none";
-
-    document.getElementById("appContent")
-        .style.display = "block";
-
-    setHeaderInfo();
-    updateAreas();
-    updateMaps();
-    renderAreaPhotoPanel(null);
-    checkBetaAccess();
-    loadAITestScript();
-}
-   
-  // LOAD DATA
-  if (savedData) {
-    try {
-      data = JSON.parse(savedData);
-      render();
-    } catch (e) {
-      console.warn("Neizdevās ielādēt datus", e);
-    }
-  }
+    //✅ Mēnesis - Gads
+        document.getElementById("month")
+            .addEventListener("input", updateYearFromMonth);
+        document.getElementById("month")
+            .addEventListener("change", updateYearFromMonth);;
+    // ✅ Izvēlne
+    const gradeBtn = document.getElementById("gradeBtn");
+    const menu = document.querySelector(".menu");
+    const gradeInput = document.getElementById("grade");
+        gradeBtn.addEventListener("click", () => {
+            menu.style.display = menu.style.display === "block"
+                ? "none"
+                : "block";
+        });
+        document.querySelectorAll(".menu .item")
+            .forEach(item => {
+                item.addEventListener("click", () => {
+                gradeInput.value = item.dataset.value;
+                gradeBtn.innerHTML = item.innerHTML + " ▼";
+                menu.style.display = "none";
+                });
+            });
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".dropdown")) {
+                menu.style.display = "none";
+            }
+        });
+        document.addEventListener("click", event => {
+            const wrapper = event.target.closest(".user-name-wrapper");
+            const list = document.getElementById("recentUsersList");
+                if (!wrapper && list) {list.style.display = "none";}
+        });
+    //✅ Login Pārbaude
+        if (location && name) {
+            currentLocation = location;
+                document.getElementById("locationSelect")
+                    .style.display = "none";
+                document.getElementById("appContent")
+                    .style.display = "block";
+        setHeaderInfo();
+        updateAreas();
+        updateMaps();
+        renderAreaPhotoPanel(null);
+        checkBetaAccess();
+        loadAITestScript();
+        }
+    //✅ LOAD DATA
+        if (savedData) {
+            try {
+                data = JSON.parse(savedData);
+                render();
+            } catch (e) {
+            console.warn("Neizdevās ielādēt datus", e);
+            }
+        }
     // ✅ Ja gads tukšs, ieliek aktuālo
-  if (!document.getElementById("year").value) {
-        document.getElementById("year").value = new Date().getFullYear();
-    }
+        if (!document.getElementById("year").value) {
+            document.getElementById("year").value = new Date().getFullYear();
+        }
   // ✅ LIVE APRĒĶINS
     document.getElementById("avgLength").addEventListener("input", calculateGali);
     document.getElementById("packWidth").addEventListener("input", calculateGali);
@@ -1688,29 +1593,22 @@ document.addEventListener("click", event => {
     document.getElementById("packHeight").addEventListener("input", calculateGali);
     document.getElementById("thickness").addEventListener("input", calculateGali);
     document.getElementById("width").addEventListener("input", calculateGali);
-   
         const areaSelect = document.getElementById("area");
             if (areaSelect) {
-                areaSelect.removeEventListener("change",
-                    handleAreaChange
-                );
-                areaSelect.addEventListener("change",
-                    handleAreaChange
-                );
+                areaSelect.removeEventListener("change", handleAreaChange);
+                areaSelect.addEventListener("change", handleAreaChange);
             }
-        document.addEventListener("input", event => {
-            const field = event.target;
-
-            // Šos laukus pārvalda validateDimensionFields()
+            document.addEventListener("input", event => {
+        const field = event.target;
+            //✅  Šos laukus pārvalda validateDimensionFields()
             if (
                 field.id === "thickness" ||
                 field.id === "width"
                 ) {
             return;
             }
-
-                // Citiem AI laukiem noņem brīdinājumu,
-                // kad lietotājs sāk ievadīt vērtību
+                //✅  Citiem AI laukiem noņem brīdinājumu,
+                //✅  kad lietotājs sāk ievadīt vērtību
             if (field.classList.contains("aiAttention")) {
                 field.classList.remove("aiAttention");
                 }
@@ -1719,17 +1617,10 @@ document.addEventListener("click", event => {
 
 // ✅ ERROR
 function error(msg, fieldId = null) {
-  document.getElementById("error").innerText = msg;
-    showNotice(
-      "⚠️ " + msg,
-        "error",
-    fieldId
-  );
+    document.getElementById("error").innerText = msg;
+        showNotice("⚠️ " + msg, "error", fieldId);
 }
-
-// ======================================================
-// 💾 DROŠI SAGLABĀ DARBA DATUS
-// ======================================================
+//✅  💾 DROŠI SAGLABĀ DARBA DATUS
 function saveWorkingState() {
     try {
         localStorage.setItem(
@@ -1755,7 +1646,6 @@ function saveWorkingState() {
         return false;
     }
 }
-
 function checkBetaAccess() {
     const testMode = isTestMode();
     [
@@ -1769,7 +1659,7 @@ function checkBetaAccess() {
                 el.style.display = testMode
                     ? "block"
                     : "none";
-        }
+            }
     });    
 }
 function isTestMode() {
@@ -1778,35 +1668,23 @@ function isTestMode() {
         .toLowerCase();
     return user.endsWith(" test");
 }
-// ======================================================
-// 📷 FOTO PALĪGFUNKCIJAS
-// ======================================================
+    //✅  📷 Foto palīgfunkcija
 function hasAreaPhoto(area) {
-    return !!(
-        area &&
-        areaPhotos &&
-        areaPhotos[area]
-    );
+    return !!(area && areaPhotos && areaPhotos[area]);
 }
-// ------------------------------------------------------
-// Saglabā foto localStorage
-// ------------------------------------------------------
+    //✅  Saglabā foto localStorage
 function saveAreaPhotosStorage() {
     try {
         localStorage.setItem(
             "areaPhotos", JSON.stringify(areaPhotos));
         return true;
     } catch (error) {
-        console.error("❌ Neizdevās saglabāt foto:",
-            error);
-        if (
-            error &&
-            error.name === "QuotaExceededError") {
+        console.error("❌ Neizdevās saglabāt foto:", error);
+        if (error && error.name === "QuotaExceededError") {
             showNotice(
                 "❌ Nepietiek vietas pārlūka krātuvē. " +
                 "Foto ir pārāk liels vai foto ir par daudz.",
-                "error"
-            );
+                "error");
         } else {
             showNotice(
                 "❌ Neizdevās saglabāt foto.",
@@ -1815,9 +1693,7 @@ function saveAreaPhotosStorage() {
         return false;
     }
 }
-// ------------------------------------------------------
-// Atver foto izvēli konkrētam apgabalam
-// ------------------------------------------------------
+    //✅  Atver foto izvēli konkrētam apgabalam
 function chooseAreaPhoto(area) {
     if (!area) {
         showNotice(
@@ -1825,478 +1701,432 @@ function chooseAreaPhoto(area) {
             "error");
         return;
     }
-    const input =
-        document.getElementById("areaPhotoInput");
-    if (!input) {
-        showNotice(
-            "❌ Foto ievades lauks nav atrasts!",
-            "error");
-        console.error(
-            "❌ Nav #areaPhotoInput");
+    const input = document.getElementById("areaPhotoInput");
+        if (!input) {
+            showNotice(
+                "❌ Foto ievades lauks nav atrasts!",
+                "error");
+            console.error("❌ Nav #areaPhotoInput");
         return;
-    }
-    photoTargetArea = area;
-    currentArea = area;
-    // Notīra iepriekšējo izvēli,
-    // lai var izvēlēties to pašu foto vēlreiz
-    input.value = "";
-    input.click();
+        }
+        photoTargetArea = area;
+        currentArea = area;
+            //✅  Notīra iepriekšējo izvēli,
+            //✅  lai var izvēlēties to pašu foto vēlreiz
+        input.value = "";
+        input.click();
 }
-// ------------------------------------------------------
-// Dzēš apgabala foto
-// ------------------------------------------------------
+    //✅  Dzēš apgabala foto
 function deleteAreaPhoto(area) {
-    if (!area) {
+        if (!area) {
+            return;
+        }
+        if (!hasAreaPhoto(area)) {
+            showNotice(
+                `ℹ️ Apgabalam ${area} nav foto.`,
+                "info");
         return;
-    }
-    if (!hasAreaPhoto(area)) {
-        showNotice(
-            `ℹ️ Apgabalam ${area} nav foto.`,
-            "info");
-        return;
-    }
-    const confirmed = confirm(
-        `Vai tiešām dzēst apgabala ${area} foto?`
-        );
-    if (!confirmed) {
-        return;
-    }
+        }
+    const confirmed = confirm(`Vai tiešām dzēst apgabala ${area} foto?`);
+        if (!confirmed) {
+            return;
+        }
     delete areaPhotos[area];
-    if (!saveAreaPhotosStorage()) {
-        return;
-    }
+        if (!saveAreaPhotosStorage()) {
+            return;
+        }
     dataChanged = true;
     saveBackup();
     renderAreaPhotoPanel(area);
-    // Ja ir importēšanas logs
-    if (
-        typeof renderImportAreas === "function" &&
-        importedBackup &&
-        importedAreaSummary
-    ) {
-        renderImportAreas();
-    }
-    showNotice(
-        `🗑️ Foto dzēsts apgabalam ${area}`,
-        "success"
-    );
-}
-// ------------------------------------------------------
-// Atver foto apskatei
-// ------------------------------------------------------
-function viewAreaPhoto(area) {
-    if (!area) {
-        return;
-    }
-    const photo = areaPhotos[area];
-    if (!photo) {
+    //✅  Ja ir importēšanas logs
+        if (typeof renderImportAreas === "function" && importedBackup && importedAreaSummary) {
+            renderImportAreas();
+        }
         showNotice(
-            `ℹ️ Apgabalam ${area} nav foto.`,
-            "info");
-        return;
-    }
+            `🗑️ Foto dzēsts apgabalam ${area}`,
+            "success"
+        );
+}
+    //✅  Atver foto apskatei
+function viewAreaPhoto(area) {
+        if (!area) {
+            return;
+        }
+    const photo = areaPhotos[area];
+        if (!photo) {
+            showNotice(
+                `ℹ️ Apgabalam ${area} nav foto.`,
+                "info");
+            return;
+        }
     openImageFromSrc(photo);
 }
-// ------------------------------------------------------
-// Atver importētā backup foto
-// ------------------------------------------------------
+    //✅  Atver importētā backup foto
 function viewImportedAreaPhoto(area) {
-    if (
-        !importedBackup ||
-        !importedBackup.areaPhotos) {
-        return;
-    }
+        if (!importedBackup || !importedBackup.areaPhotos) {
+            return;
+        }
     const photo = importedBackup.areaPhotos[area];
-    if (!photo) {
-        showNotice(
-            `ℹ️ Apgabalam ${area} nav foto.`,
-            "info");
+        if (!photo) {
+            showNotice(
+                `ℹ️ Apgabalam ${area} nav foto.`,
+                "info");
         return;
         }    
     openImageFromSrc(photo);
 }
 function clearError() {
-  document.getElementById("error").innerText = "";
+    document.getElementById("error").innerText = "";
 }
 function clearForm(focus = true) {
     setMixedMode(false);
-        for (const id of [
-            "mixedLength", "mixedWidth", "mixedHeight", "mixedFill"
-            ]) {
-    document.getElementById(id).value = "";
-    }
-  document.getElementById("packages").value = "";
-  document.getElementById("thickness").value = "";
-  document.getElementById("width").value = "";
-  document.getElementById("length").value = "";
-  document.getElementById("month").value = "";
-  document.getElementById("year").value = "";
-  document.getElementById("name").value = "";
-  document.getElementById("productCode").value = "";
-  document.getElementById("comment").value = "";
-  document.getElementById("commentPreset").value = "";
-  document.getElementById("pieces").value = "";
-  document.getElementById("packWidth").value = "";
-  document.getElementById("packLength").value = "";
-  document.getElementById("packHeight").value = "";
-  document.getElementById("avgLength").value = "";
-  document.getElementById("galiInputs").style.display = "none";
-  document.getElementById("sizeSuggestions").innerHTML = "";
-  document.getElementById("sizeSuggestions").style.display = "none";
-const calcInfo = document.getElementById("calcInfo");
-if (calcInfo) {
-    calcInfo.style.display = "none";
-  }
-  isGaliMode = false;
-    document.getElementById("length").disabled = false;
-    document.getElementById("galiBtn").classList.remove("active");
-  const field = document.getElementById("packages");
-    if (field && focus) {
-    // SVARĪGI:
-    // focus uzliek uzreiz, kamēr vēl darbojas
-    // lietotāja klikšķis uz "Pievienot"
-    field.focus({
-        preventScroll: true
-    });
-    // Pārvieto vajadzīgajā vietā
+        for (const id of ["mixedLength", "mixedWidth", "mixedHeight", "mixedFill"]) {
+            document.getElementById(id).value = "";
+        }
+        document.getElementById("packages").value = "";
+        document.getElementById("thickness").value = "";
+        document.getElementById("width").value = "";
+        document.getElementById("length").value = "";
+        document.getElementById("month").value = "";
+        document.getElementById("year").value = "";
+        document.getElementById("name").value = "";
+        document.getElementById("productCode").value = "";
+        document.getElementById("comment").value = "";
+        document.getElementById("commentPreset").value = "";
+        document.getElementById("pieces").value = "";
+        document.getElementById("packWidth").value = "";
+        document.getElementById("packLength").value = "";
+        document.getElementById("packHeight").value = "";
+        document.getElementById("avgLength").value = "";
+        document.getElementById("galiInputs").style.display = "none";
+        document.getElementById("sizeSuggestions").innerHTML = "";
+        document.getElementById("sizeSuggestions").style.display = "none";
+    const calcInfo = document.getElementById("calcInfo");
+        if (calcInfo) {
+            calcInfo.style.display = "none";
+        }
+        isGaliMode = false;
+        document.getElementById("length").disabled = false;
+        document.getElementById("galiBtn").classList.remove("active");
+    const field = document.getElementById("packages");
+        if (field && focus) {
+    //✅  SVARĪGI:
+    //✅  focus uzliek uzreiz, kamēr vēl darbojas
+    //✅  lietotāja klikšķis uz "Pievienot"
+        field.focus({preventScroll: true});
+    //✅  Pārvieto vajadzīgajā vietā
     const y = field.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({
-        top: y,
-        behavior: "smooth"
-    });
-    }
+        window.scrollTo({
+            top: y,
+            behavior: "smooth"
+        });
+        }
 }
-// ✅ TABULAS SLĒPŠANA
-  let tableVisible = true;
+    // ✅ TABULAS SLĒPŠANA
+    let tableVisible = true;
 function toggleTable() {
-  const t = document.getElementById("table");
-    tableVisible = !tableVisible;
-    t.style.display = tableVisible ? "table" : "none";
-  }
+    const t = document.getElementById("table");
+        tableVisible = !tableVisible;
+        t.style.display = tableVisible ? "table" : "none";
+}
 function calculateGali() {
-  console.log("GALI CALC");
-  const thicknessVal = Number(document.getElementById("thickness").value);
-  const widthVal = Number(document.getElementById("width").value);
-  const packWidth = Number(document.getElementById("packWidth").value);
-  const packLength = Number(document.getElementById("packLength").value);
-  const packHeight = Number(document.getElementById("packHeight").value);
-  const avgLength = Number(document.getElementById("avgLength").value);
-if (
-    thicknessVal <= 0 || widthVal <= 0 ||
-    packWidth <= 0 || packLength <= 0 || packHeight <= 0 ||
-    avgLength <= 0
-) return;
-  let piecesAcrossWidth = Math.floor(packWidth / widthVal);
-  let piecesAcrossHeight = Math.floor(packHeight / thicknessVal);
-  let piecesFront = piecesAcrossWidth * piecesAcrossHeight;
-  let columns = Math.floor(packLength / avgLength);
-  // ✅ MAINĪJUMS ŠEIT
-  let efficiency = 0.95;
-  let piecesPerPack = Math.max( 1, Math.floor(
-    piecesFront * columns * efficiency
-  )
-);
+        console.log("GALI CALC");
+    const thicknessVal = Number(document.getElementById("thickness").value);
+    const widthVal = Number(document.getElementById("width").value);
+    const packWidth = Number(document.getElementById("packWidth").value);
+    const packLength = Number(document.getElementById("packLength").value);
+    const packHeight = Number(document.getElementById("packHeight").value);
+    const avgLength = Number(document.getElementById("avgLength").value);
+        if (
+            thicknessVal <= 0 || widthVal <= 0 ||
+            packWidth <= 0 || packLength <= 0 || packHeight <= 0 ||
+            avgLength <= 0
+        ) return;
+    let piecesAcrossWidth = Math.floor(packWidth / widthVal);
+    let piecesAcrossHeight = Math.floor(packHeight / thicknessVal);
+    let piecesFront = piecesAcrossWidth * piecesAcrossHeight;
+    let columns = Math.floor(packLength / avgLength);
+    // ✅ MAINĪJUMS ŠEIT
+    let efficiency = 0.95;
+    let piecesPerPack = Math.max( 1, Math.floor(piecesFront * columns * efficiency));
   // ✅ PARĀDA AR ≈
-  document.getElementById("pieces").value = "≈ " + piecesPerPack;
-  document.getElementById("calcInfo").style.display = "block";
+        document.getElementById("pieces").value = "≈ " + piecesPerPack;
+        document.getElementById("calcInfo").style.display = "block";
 }
- //✅ Border
+    //✅ Border
 function borderAll() {
-  return {
-    top: { style: "thin" },
-    left: { style: "thin" },
-    bottom: { style: "thin" },
-    right: { style: "thin" }
-  };
+    return {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" }
+    };
 }
-//✅ Color
+    //✅ Color
 function fillGray() {
-  return {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FFD9D9D9" }
-  };
+    return {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9D9D9" }
+    };
 }
-//✅ Row style
+    //✅ Row style
 function applyRowStyle(row, type) {
-  let color;
-  switch (type) {
-    case "lightGreen":
-      color = "FFC6EFCE";
-      break;
-    case "yellow":
-      color = "FFFFEB9C";
-      break;
-    case "softGreen":
-      color = "FFE2EFDA";
-      break;
-    case "blue":
-      color = "FFBDD7EE";
-      break;
-    case "beige":
-      color = "FFFCE4D6";
-      break;
-    default:
-      color = "FFFFFFFF";
-  }
-  // ✅ palielina rindas augstumu (vizuāls "padding")
-  row.height = 22;
-  row.eachCell((cell, colNumber) => {
-    cell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: color }
-    };
-    cell.border = borderAll();
+    let color;
+        switch (type) {
+            case "lightGreen":
+                color = "FFC6EFCE";
+                break;
+            case "yellow":
+                color = "FFFFEB9C";
+                break;
+            case "softGreen":
+                color = "FFE2EFDA";
+                break;
+            case "blue":
+                color = "FFBDD7EE";
+                break;
+            case "beige":
+                color = "FFFCE4D6";
+                break;
+            default:
+                color = "FFFFFFFF";
+        }
+    // ✅ palielina rindas augstumu (vizuāls "padding")
+        row.height = 22;
+        row.eachCell((cell, colNumber) => {
+            cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: color }
+            };
+            cell.border = borderAll();
     // ✅ centrē tekstu visur
-    cell.alignment = {
-      vertical: "middle",
-      horizontal: colNumber === 2 ? "left" : "center",
-      wrapText: true,
-      indent: colNumber === 2 ? 1 : 0
-    };
-  });
+            cell.alignment = {
+                vertical: "middle",
+                horizontal: colNumber === 2 ? "left" : "center",
+                wrapText: true,
+                indent: colNumber === 2 ? 1 : 0
+            };
+        });
 }
   //✅ Export Excel
 async function exportExcel() {
-  if (data.length === 0) {
-    return showNotice(
-      "⚠️ Nav datu eksportam",
-      "error"
-    );
-  }
-  const location = localStorage.getItem("location") || "";
-  const name = localStorage.getItem("userName") || "";
-  const d = new Date();
-  const safeLocation = safeFileName(location);
-  const safeName = safeFileName(name);
-  const dateStr =
-    String(d.getDate()).padStart(2, "0") + "." +
-    String(d.getMonth() + 1).padStart(2, "0") + "." +
-    d.getFullYear();
-  const fileDate =
-    String(d.getDate()).padStart(2, "0") + "-" +
-    String(d.getMonth() + 1).padStart(2, "0") + "-" +
-    d.getFullYear();
-  const timeStr =
-  String(d.getHours()).padStart(2, "0") +
-  String(d.getMinutes()).padStart(2, "0") +
-  String(d.getSeconds()).padStart(2, "0");
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Inventarizācija");
- //✅ TITLE
-  ws.mergeCells("A1:O1");
-  ws.getCell("A1").value = "Nepabeigtas Ražošanas Inventarizācijas protokols";
-  ws.getCell("A1").alignment = { horizontal: "center" };
-  ws.getCell("A1").font = { bold: true, size: 14 };
-  ws.addRow([]);
-//✅ SKAIDROJUMU BLOKS
+        if (data.length === 0) {
+            return showNotice(
+                "⚠️ Nav datu eksportam",
+                "error"
+            );
+        }
+    const location = localStorage.getItem("location") || "";
+    const name = localStorage.getItem("userName") || "";
+    const d = new Date();
+    const safeLocation = safeFileName(location);
+    const safeName = safeFileName(name);
+    const dateStr =
+        String(d.getDate()).padStart(2, "0") + "." +
+        String(d.getMonth() + 1).padStart(2, "0") + "." +
+        d.getFullYear();
+    const fileDate =
+        String(d.getDate()).padStart(2, "0") + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        d.getFullYear();
+    const timeStr =
+        String(d.getHours()).padStart(2, "0") +
+        String(d.getMinutes()).padStart(2, "0") +
+        String(d.getSeconds()).padStart(2, "0");
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Inventarizācija");
+    //✅ Title
+        ws.mergeCells("A1:O1");
+        ws.getCell("A1").value = "Nepabeigtas Ražošanas Inventarizācijas protokols";
+        ws.getCell("A1").alignment = { horizontal: "center" };
+        ws.getCell("A1").font = { bold: true, size: 14 };
+        ws.addRow([]);
+    //✅ Skaidrojumu bloks
 function addLegendRow(values, color) {
-  let row = ws.addRow(values);
-    applyRowStyle(row, color);
-  let r = row.number;
-  // ✅ merge Skaidrojums (B → L)
-  ws.mergeCells(`B${r}:L${r}`);
-
-  // ✅ skaists alignment
-  ws.getCell(`B${r}`).alignment = {
-    vertical: "middle",
-    horizontal: "left",
-    wrapText: true,
-    indent: 1
-  };
+    let row = ws.addRow(values);
+        applyRowStyle(row, color);
+    let r = row.number;
+    // ✅ merge Skaidrojums (B → L)
+        ws.mergeCells(`B${r}:L${r}`);
+    // ✅ skaists alignment
+        ws.getCell(`B${r}`).alignment = {
+            vertical: "middle",
+            horizontal: "left",
+            wrapText: true,
+            indent: 1
+        };
 }
-// ✅ HEADER
-let legendHeader = ws.addRow([
-  "Šķira", "Skaidrojums", "", "", "", "", "", "", "", "", "", "", "", "Apzīmējums"
-]);
-legendHeader.eachCell(cell => {
-  cell.font = { bold: true };
-  cell.alignment = { horizontal: "center", vertical: "middle" };
-  cell.border = borderAll();
-  cell.fill = fillGray();
-});
-// ✅ HEADER merge arī
-let hr = legendHeader.number;
-ws.mergeCells(`B${hr}:L${hr}`);
-// ✅ ROWS
-addLegendRow(
-  ["K kods", "Sakomplektēta produkcija", "", "", "", "", "", "", "", "", "", "", "", "K"],
-  "lightGreen"
-);
-addLegendRow(
-  ["Augstākā šķira", "Pilnībā gatava detaļa, pabeigtas visas operācijas, t.sk., impregnācija", "", "", "", "", "", "", "", "", "", "", "", "A"],
-  "yellow"
-);
-// ✅ 1. šķira
-[
-  ["1. šķira", "Ēvelēti dēļi", "1a"],
-  ["", "Neēvelēti, bet sagarināti dēļi", "1b"],
-  ["", "Ēvelētas sagarinātas sagataves", "1c"],
-  ["", "Tālākā apstrādē esošas sagataves", "1d"]
-].forEach(r => {
-  addLegendRow(
-    [r[0], r[1], "", "", "", "", "", "", "", "", "", "", "", r[2]],
-    "softGreen"
-  );
-});
-// ✅ 2. šķira
-[
-  ["2. šķira", "Sagataves, detaļas un gali, kurām pagaidām nav konkrēta pielietojuma", "2a"],
-  ["", "Brāķis, kuram redzams pielietojums - varam izmantot tālākā apstrādē", "2b"],
-  ["", "Brāķis, kuram nav pielietojums - iznīcināms", "2c"]
-].forEach(r => {
-  addLegendRow(
-    [r[0], r[1], "", "", "", "", "", "", "", "", "", "", "", r[2]],
-    "blue"
-  );
-});
-// ✅ Paletes
-addLegendRow(
-  ["Paletes", "Paletes gatavai produkcijai", "", "", "", "", "", "", "", "", "", "", "", "PAL"],
-  "beige"
-);
-ws.addRow([]);
-ws.addRow([]);
-  //✅ INFO
-  ws.addRow([
-    "Datums:", dateStr,
-    "", "",
-    "Sastādīja:", name,
-    "", "",
-    "Ražotne:", location
-  ]);
-  ws.addRow([]);
-  //✅ TABULAS HEADER
-  const headers = [
-    "Apgabals",
-    "Paku skaits",
-    "Detaļas nosaukums",
-    "Produkta kods",
-    "m3 vienā pakā",
-    "Biezums",
-    "Platums",
-    "Garums",
-    "Detaļu skaits pakā",
-    "m3 kopā",
-    "Mēnesis",
-    "Gads",
-    "Šķira",
-    "Komentārs",
-    "",
-    "m3 detaļas"
-  ];
-  const tableHeader = ws.addRow(headers);
-  tableHeader.eachCell(cell => {
-    cell.font = { bold: true };
-    cell.alignment = { horizontal: "center" };
-    cell.border = borderAll();
-    cell.fill = fillGray();
-  });
-  const startRow = tableHeader.number + 1;
- //✅ DATA
-  let totalPackages = 0;
-    data.forEach(e => {
-    totalPackages += e.packages || 0;
-  let pieceM3 = 0;
-  if ((e.length || "").toLowerCase() === "gali") {
-      pieceM3 = (e.thickness * e.width * e.avgLength) / 1000000000;
-  } else {
-      pieceM3 = (e.thickness * e.width * Number(e.length)) / 1000000000;
-    }
-  const rowIndex = ws.rowCount + 1;
-  const row = ws.addRow([
-    // A — Apgabals
-      e.area,
-    // B — Paku skaits
-      e.packages,
-    // C — Detaļas nosaukums
-      e.name,
-    // D — Produkta kods
-      e.code,
-    // E — m3 vienā pakā
-      e.mode === "mixed" ||
-        (e.length || "").toLowerCase() === "gali"
-            ? e.m3Pack
-            : { formula: `P${rowIndex}*I${rowIndex}` },
-    // F — Biezums
-      e.mode === "mixed" ? "" : e.thickness,
-    // G — Platums
-      e.mode === "mixed" ? "" : e.width,
-    // H — Garums
-      e.mode === "mixed"
-        ? ""
-        : (e.length || "").toLowerCase() === "gali"
-            ? e.avgLength || ""
-            : Number(e.length),
-    // I — Detaļu skaits pakā
-     e.mode === "mixed" ? "" : e.pieces,
-    // J — m3 kopā
-    // Paku skaits × m3 vienā pakā
-      { formula: `B${rowIndex}*E${rowIndex}` },
-    // K — Mēnesis
-      String(e.month).padStart(2, "0"),
-    // L — Gads
-      e.year < 100 ? "20" + e.year : e.year,
-    // M — Šķira
-      e.grade,
-    // N — Komentārs
-      e.comment,
-    // O — Gali
-      (e.length || "").toLowerCase() === "gali" ? "Gali" : "",
-    // P = m3 detaļas
-      e.mode === "mixed"
-            ? ""
-            : { formula: `F${rowIndex}*G${rowIndex}*H${rowIndex}/1000000000` }
+    //✅ Header
+    let legendHeader = ws.addRow([
+        "Šķira", "Skaidrojums", "", "", "", "", "", "", "", "", "", "", "", "Apzīmējums"
+        ]);
+        legendHeader.eachCell(cell => {
+            cell.font = { bold: true };
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+            cell.border = borderAll();
+            cell.fill = fillGray();
+        });
+    //✅ Header merge
+    let hr = legendHeader.number;
+        ws.mergeCells(`B${hr}:L${hr}`);
+    //✅ ROWS
+    addLegendRow(["K kods", "Sakomplektēta produkcija", "", "", "", "", "", "", "", "", "", "", "", "K"], "lightGreen");
+    addLegendRow(["Augstākā šķira", "Pilnībā gatava detaļa, pabeigtas visas operācijas, t.sk., impregnācija", "", "", "", "", "", "", "", "", "", "", "", "A"], "yellow");
+    //✅ 1. šķira
+        [
+            ["1. šķira", "Ēvelēti dēļi", "1a"],
+            ["", "Neēvelēti, bet sagarināti dēļi", "1b"],
+            ["", "Ēvelētas sagarinātas sagataves", "1c"],
+            ["", "Tālākā apstrādē esošas sagataves", "1d"]
+        ].forEach(r => {
+            addLegendRow([r[0], r[1], "", "", "", "", "", "", "", "", "", "", "", r[2]], "softGreen");
+        });
+    //✅ 2. šķira
+        [
+            ["2. šķira", "Sagataves, detaļas un gali, kurām pagaidām nav konkrēta pielietojuma", "2a"],
+            ["", "Brāķis, kuram redzams pielietojums - varam izmantot tālākā apstrādē", "2b"],
+            ["", "Brāķis, kuram nav pielietojums - iznīcināms", "2c"]
+        ].forEach(r => {
+            addLegendRow([r[0], r[1], "", "", "", "", "", "", "", "", "", "", "", r[2]], "blue");
+        });
+    //✅ Paletes
+            addLegendRow(
+                ["Paletes", "Paletes gatavai produkcijai", "", "", "", "", "", "", "", "", "", "", "", "PAL"], "beige");
+        ws.addRow([]);
+        ws.addRow([]);
+    //✅ INFO
+        ws.addRow([
+            "Datums:", dateStr, "", "",
+            "Sastādīja:", name, "", "",
+            "Ražotne:", location
+        ]);
+        ws.addRow([]);
+    //✅ TABULAS HEADER
+    const headers = [
+        "Apgabals",
+        "Paku skaits",
+        "Detaļas nosaukums",
+        "Produkta kods",
+        "m3 vienā pakā",
+        "Biezums",
+        "Platums",
+        "Garums",
+        "Detaļu skaits pakā",
+        "m3 kopā",
+        "Mēnesis",
+        "Gads",
+        "Šķira",
+        "Komentārs",
+        "",
+        "m3 detaļas"
+      ];
+    const tableHeader = ws.addRow(headers);
+        tableHeader.eachCell(cell => {
+            cell.font = { bold: true };
+            cell.alignment = { horizontal: "center" };
+            cell.border = borderAll();
+            cell.fill = fillGray();
+        });
+    const startRow = tableHeader.number + 1;
+    //✅ DATA
+    let totalPackages = 0;
+        data.forEach(e => {
+        totalPackages += e.packages || 0;
+    let pieceM3 = 0;
+        if ((e.length || "").toLowerCase() === "gali") {
+            pieceM3 = (e.thickness * e.width * e.avgLength) / 1000000000;
+        } else {
+            pieceM3 = (e.thickness * e.width * Number(e.length)) / 1000000000;
+        }
+    const rowIndex = ws.rowCount + 1;
+    const row = ws.addRow([
+        //✅  A — Apgabals
+            e.area,
+        //✅  B — Paku skaits
+            e.packages,
+        //✅  C — Detaļas nosaukums
+            e.name,
+        //✅  D — Produkta kods
+            e.code,
+        //✅  E — m3 vienā pakā
+            e.mode === "mixed" || (e.length || "").toLowerCase() === "gali"
+                ? e.m3Pack
+                : { formula: `P${rowIndex}*I${rowIndex}` },
+        //✅  F — Biezums
+            e.mode === "mixed" ? "" : e.thickness,
+        //✅  G — Platums
+            e.mode === "mixed" ? "" : e.width,
+        //✅  H — Garums
+            e.mode === "mixed"
+                ? ""
+                : (e.length || "").toLowerCase() === "gali"
+                    ? e.avgLength || ""
+                    : Number(e.length),
+        //✅  I — Detaļu skaits pakā
+            e.mode === "mixed" ? "" : e.pieces,
+        //✅  J — m3 kopā (Paku skaits × m3 vienā pakā)
+            { formula: `B${rowIndex}*E${rowIndex}` },
+        //✅  K — Mēnesis
+            String(e.month).padStart(2, "0"),
+        //✅  L — Gads
+            e.year < 100 ? "20" + e.year : e.year,
+        //✅  M — Šķira
+            e.grade,
+        //✅  N — Komentārs
+            e.comment,
+        //✅  O — Gali
+            (e.length || "").toLowerCase() === "gali" ? "Gali" : "",
+        //✅  P = m3 detaļas
+            e.mode === "mixed"
+                ? ""
+                : { formula: `F${rowIndex}*G${rowIndex}*H${rowIndex}/1000000000` }
     ]);
-    // 🔢 3 cipari aiz komata
-    row.getCell(5).numFmt = '0.000';   // E
-    row.getCell(10).numFmt = '0.000';  // J
-    row.eachCell(cell => {
-      cell.border = borderAll();
-    });
-  });
-  const lastRow = ws.rowCount;
-  //✅ SUM
-ws.addRow([]);
-ws.addRow([
-    "Pakas kopā:",
-    {
-        formula: `SUM(B${startRow}:B${lastRow})`,
-        result: totalPackages
-    }
-]);
-const totalM3Row = ws.addRow([
-    "m3 kopā:",
-    { formula: `SUM(J${startRow}:J${lastRow})` }
-]);
-totalM3Row.getCell(2).numFmt = "0.000";
-  //✅ COLUMN WIDTH
-  [
-    10, 12, 25, 20, 14,
-    10, 10, 10,
-    16, 10,
-    10, 10,
-    10, 25, 10, 12
-  ].forEach((w, i) => {
-    ws.getColumn(i + 1).width = w;
-  });
-  //✅ SAVE
-  const buf = await wb.xlsx.writeBuffer();
-  saveAs(
-  new Blob([buf]),
-  `inv_${safeLocation}_${safeName}_${fileDate}_${timeStr}.xlsx`
-  );
+        // 🔢 3 cipari aiz komata
+            row.getCell(5).numFmt = '0.000';   // E
+            row.getCell(10).numFmt = '0.000';  // J
+            row.eachCell(cell => {
+                cell.border = borderAll();
+            });
+        });
+    const lastRow = ws.rowCount;
+      //✅ SUM
+        ws.addRow([]);
+        ws.addRow(["Pakas kopā:", {
+            formula: `SUM(B${startRow}:B${lastRow})`,
+            result: totalPackages
+            }
+        ]);
+    const totalM3Row = ws.addRow([
+        "m3 kopā:", { formula: `SUM(J${startRow}:J${lastRow})` }
+        ]);
+        totalM3Row.getCell(2).numFmt = "0.000";
+    //✅ COLUMN WIDTH
+        [
+            10, 12, 25, 20, 14,
+            10, 10, 10,
+            16, 10,
+            10, 10,
+            10, 25, 10, 12
+        ].forEach((w, i) => {
+            ws.getColumn(i + 1).width = w;
+            });
+    //✅ SAVE
+    const buf = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf]),
+            `inv_${safeLocation}_${safeName}_${fileDate}_${timeStr}.xlsx`
+            );
 }
-  // ✅ LOG OUT
+    // ✅ LOG OUT
 function doLogout() {
     localStorage.removeItem("data");
     localStorage.removeItem("userName");
     localStorage.removeItem("location");
     localStorage.removeItem("areaPhotos");
     localStorage.removeItem("sessionStart");
-    // Veca GP atslēga — nekaitīgi iztīra,
-    // ja tā palikusi pēc testēšanas
+    //✅  Veca GP atslēga — nekaitīgi iztīra,
+    //✅  ja tā palikusi pēc testēšanas
     localStorage.removeItem("userProfile");
     data = [];
     areaPhotos = {};
@@ -2344,16 +2174,13 @@ function endSession() {
     );
     document.getElementById("logoutSummary")
         .innerHTML = `
-            Ražotne:
-            ${localStorage.getItem("location") || ""}<br>
-            Lietotājs:
-            ${localStorage.getItem("userName") || ""}<br><br>
+            Ražotne: ${localStorage.getItem("location") || ""}<br>
+            Lietotājs: ${localStorage.getItem("userName") || ""}<br><br>
             📊 Inventarizācija pabeigta!<br><br>
             📦 Reģistrētas ${totalPackages} paletes.<br>
             🪵 Kopā reģistrēti
             ${totalM3.toFixed(4)} m³.<br>
             📝 Veikti ${data.length} ieraksti.<br><br>
-
             ⏱️ Reģistrācija aizņēma
             ${hours} h ${remainingMinutes} min.
         `;
@@ -2361,17 +2188,14 @@ function endSession() {
         .style.display = "block";
 }
 function closeConfirmModal() {
-    const modal =
-        document.getElementById("confirmModal");
-
-    if (modal) {
-        modal.style.display = "none";
-    }
+    const modal = document.getElementById("confirmModal");
+        if (modal) {
+            modal.style.display = "none";
+            }
 }
 function saveAndExit() {
     if (dataChanged) {
-        const backupSaved =
-            saveBackup();
+        const backupSaved = saveBackup();
         if (!backupSaved) {
             showNotice(
                 "❌ Backup neizdevās. Darbs netika pabeigts.",
@@ -2431,31 +2255,21 @@ function saveBackup() {
             "backupData",
             JSON.stringify(backup)
         );
-        // Foto tiek glabāti tikai VIENĀ vietā
+        //✅  Foto tiek glabāti tikai VIENĀ vietā
         localStorage.setItem(
             "areaPhotos",
             JSON.stringify(areaPhotos)
         );
-        console.log(
-            "💾 Backup saglabāts"
-        );
-        console.log(
-            "📷 Foto skaits:",
-            Object.keys(areaPhotos).length
-        );
+        console.log("💾 Backup saglabāts");
+        console.log("📷 Foto skaits:", Object.keys(areaPhotos).length);
         return true;
     }
     catch (error) {
-        console.error(
-            "❌ Neizdevās saglabāt backup:",
-            error
-        );
-        showNotice(
-            error?.name === "QuotaExceededError"
+        console.error("❌ Neizdevās saglabāt backup:", error);
+        showNotice(error?.name === "QuotaExceededError"
                 ? "❌ Nepietiek vietas rezerves kopijas saglabāšanai."
-                : "❌ Neizdevās saglabāt rezerves kopiju.",
-            "error"
-        );
+                : "❌ Neizdevās saglabāt rezerves kopiju.", "error"
+                );
         return false;
     }
 }
@@ -2944,17 +2758,13 @@ function renderImportAreas() {
             });
             const areaOpen = expandedArea === area;
             const entriesOpen = expandedAreaEntries === area;
-            // ==========================================
-            // 📷 APGABALA FOTO
-            // ==========================================
+            //✅  📷 APGABALA FOTO
             const photo =
                 importedBackup.areaPhotos &&
                 importedBackup.areaPhotos[area]
                     ? importedBackup.areaPhotos[area]
                     : null;
-            // ==========================================
-            // APGABALA BLOKS
-            // ==========================================
+            //✅  APGABALA BLOKS
             areaHtml += `
                 <div class="areaBlock">
                     <label class="areaHeader">
@@ -2967,9 +2777,7 @@ function renderImportAreas() {
                         </strong>
                     </label>
             `;
-            // ==========================================
-            // JA APGABALS IR ATVĒRTS
-            // ==========================================
+            //✅  JA APGABALS IR ATVĒRTS
             if (areaOpen) {
                 areaHtml += `
                     <div class="areaDetails">
@@ -3001,57 +2809,37 @@ function renderImportAreas() {
                         </div>
                     `;
                 }       
-                // ======================================
-                // IERAKSTI ATVĒRTI
-                // ======================================
+                //✅  IERAKSTI ATVĒRTI
                 if (entriesOpen) {
                     Object.entries(sizeGroups)
-                        .sort(([a], [b]) =>
-                            a.localeCompare(
-                                b,
-                                undefined,
-                                {
-                                    numeric:true
-                                }
-                            )
-                        )
+                        .sort(([a], [b]) => a.localeCompare(b, undefined, {numeric:true}))
                         .forEach(
                             ([size, entries]) => {
                                 const sizeKey = `${area}_${size}`;
                                 const sizeOpen = expandedSize === sizeKey;
-                                // ==================================
-                                // IZMĒRS
-                                // ==================================
+                                //✅  IZMĒRS
                                 areaHtml += `
                                     <div class="areaSize"
-                                        onclick="
-                                            toggleSize(
-                                                '${area}',
-                                                '${size}'
-                                            )">
-                                        ${sizeOpen ? "▼" : "▶"}
-                                        ${size}
+                                        onclick=" toggleSize('${area}', '${size}')">
+                                            ${sizeOpen ? "▼" : "▶"}
+                                            ${size}
                                     </div>
                                 `;
-                                // ==================================
-                                // KONKRĒTIE IERAKSTI
-                                // ==================================
-                                if (sizeOpen) {
-                                    entries.forEach(
-                                        entry => {
-                                            let sizeText;
-                                                if (entry.mode === "mixed") {
-                                                    sizeText =
-                                                        `Dažādi — ${entry.packLength}×${entry.packWidth}` +
-                                                        `×${entry.packHeight} mm (${entry.mixedFill}%)`;
-                                                } else {
-                                                    const lengthText =
+                                //✅  KONKRĒTIE IERAKSTI
+                                if (sizeOpen) {entries.forEach(entry => {
+                                                let sizeText;
+                                                    if (entry.mode === "mixed") {
+                                                        sizeText =
+                                                            `Dažādi — ${entry.packLength}×${entry.packWidth}` +
+                                                            `×${entry.packHeight} mm (${entry.mixedFill}%)`;
+                                                    } else {
+                                                const lengthText =
                                                         String(entry.length ?? "").trim().toLowerCase() === "gali"
                                                             ? (entry.avgLength ? `≈${entry.avgLength}` : "Gali")
                                                             : (entry.length ?? "");
                                                         sizeText =
                                                             `${entry.thickness}×${entry.width}×${lengthText}`;
-                                                }
+                                                    }
                                                     const packages = Number(entry.packages) || 0;
                                             areaHtml += `
                                                 <div class="areaEntry">
@@ -3072,9 +2860,7 @@ function renderImportAreas() {
                 </div>
             `;
         });
-    // ==========================================
-    // JA NAV APGABALU
-    // ==========================================
+    //✅ Ja nav apgabalu
     if (!areaHtml) {
         areaHtml = `
             <p>
@@ -3110,21 +2896,20 @@ function getEntryKey(e) {
     ]);
 }
 function closeImportModal() {
-document.getElementById("importModal")
-  .style.display = "none";
+    document.getElementById("importModal")
+        .style.display = "none";
 }
 function openBackupFile() {
-  const fileInput = document.getElementById("backupFile");
-    fileInput.value = "";
-  const backupInfo = document.getElementById("backupInfo");
-      backupInfo.style.display = "none";
-      backupInfo.textContent = "";
-      fileInput.click();
+    const fileInput = document.getElementById("backupFile");
+        fileInput.value = "";
+    const backupInfo = document.getElementById("backupInfo");
+        backupInfo.style.display = "none";
+        backupInfo.textContent = "";
+        fileInput.click();
 }
 function restoreImportedBackup() {
     if (
-        !importedBackup ||
-        !Array.isArray(importedBackup.entries)
+        !importedBackup || !Array.isArray(importedBackup.entries)
     ) {
         showNotice(
             "❌ Nav pieejami importētie backup dati!",
@@ -3167,28 +2952,22 @@ if (data.length > 0) {
     return;
 }
     dataChanged = true;
-    // ==============================================
-    // NOTĪRA BACKUP INPUT
-    // ==============================================
+    //✅ Notīra backup input
     const backupFile = document.getElementById("backupFile");
-    if (backupFile) {
-        backupFile.value = "";
-    }
+        if (backupFile) {
+            backupFile.value = "";
+        }
     const backupInfo = document.getElementById("backupInfo");
-    if (backupInfo) {
-        backupInfo.textContent = "";
-        backupInfo.style.display = "none";
-    }
-    // ==============================================
-    // PĀRZĪMĒ APP
-    // ==============================================
+        if (backupInfo) {
+            backupInfo.textContent = "";
+            backupInfo.style.display = "none";
+        }
+    //✅ Pārzīmē App
     render();
-    // Izveido jauno lokālo backup
+    //✅ Izveido jauno lokālo backup
     saveBackup();
     closeImportModal();
-    // ==============================================
-    // PAZIŅOJUMS
-    // ==============================================
+    //✅ PAZIŅOJUMS
     showNotice(
         `✅ Atjaunoti ${data.length} ieraksti.
         📷 Atjaunoti ${
@@ -3201,47 +2980,27 @@ if (data.length > 0) {
     );
 }
 function restoreSelectedAreas() {
-    if (
-        !importedBackup ||
-        !Array.isArray(importedBackup.entries)
-    ) {
-        showNotice(
-            "❌ Nav pieejami importētie backup dati!",
-            "error"
-        );
+    if (!importedBackup || !Array.isArray(importedBackup.entries))
+        {showNotice("❌ Nav pieejami importētie backup dati!", "error");
         return;
     }
-    // ==============================================
-    // IZVĒLĒTIE APGABALI
-    // ==============================================
+    //✅ Izvēlētie Apgabali
     const selectedAreas = [
         ...document.querySelectorAll(
             "#areaList input:checked"
-        )
-    ].map(cb => cb.value);
-    if (!selectedAreas.length) {
-        showNotice(
-            "⚠️ Izvēlies vismaz vienu apgabalu!",
-            "error"
-        );
+            )
+        ].map(cb => cb.value);
+        if (!selectedAreas.length) {
+            showNotice("⚠️ Izvēlies vismaz vienu apgabalu!", "error");
         return;
     }
-    // ==============================================
-    // IZVĒLĒTIE IERAKSTI
-    // ==============================================
-    const selectedData = importedBackup.entries.filter(
-            e =>
-                selectedAreas.includes(e.area)
-        );
-    // ==============================================
-    // ESOŠO IERAKSTU ATSLĒGAS
-    // ==============================================
+    //✅ Izvēlētie ieraksti
+    const selectedData = importedBackup.entries.filter(e => selectedAreas.includes(e.area));
+    // Esošo ierakstu atslēgas
     const existingKeys = new Set(
             data.map(getEntryKey)
         );
-    // ==============================================
-    // ATLASA TIKAI JAUNOS IERAKSTUS
-    // ==============================================
+    //✅ Atlasa tikai jaunos ierakstus
     const newEntries = selectedData.filter(e => {
             const key = getEntryKey(e);
                 if (existingKeys.has(key)) {
@@ -3250,30 +3009,22 @@ function restoreSelectedAreas() {
             existingKeys.add(key);
             return true;
         });
-    // ==============================================
     // 📷 ATJAUNO IZVĒLĒTO APGABALU FOTO
-    // ==============================================
     let photosAdded = 0;
-    selectedAreas.forEach(area => {
-        const photo =
-            importedBackup.areaPhotos &&
-            importedBackup.areaPhotos[area];
-        if (photo) {
-            areaPhotos[area] = photo;
-            photosAdded++;
-        }
-    });
-    // ==============================================
-    // PIEVIENO JAUNOS IERAKSTUS
-    // ==============================================
+        selectedAreas.forEach(area => {
+        const photo = importedBackup.areaPhotos && importedBackup.areaPhotos[area];
+            if (photo) {
+                areaPhotos[area] = photo;
+                photosAdded++;
+                }
+        });
+    //✅ Pievieno jaunos ierakstus
     if (newEntries.length) {
         data.push(
             ...newEntries
         );
     }
-    // ==============================================
-    // JA NEBIJA NE IERAKSTU, NE FOTO
-    // ==============================================
+    // Ja nebija ne ierakstu, ne foto
     if (
         !newEntries.length &&
         !photosAdded
@@ -3285,9 +3036,7 @@ function restoreSelectedAreas() {
         closeImportModal();
         return;
     }
-    // ==============================================
-    // 💾 SAGLABĀ
-    // ==============================================
+    // 💾 Saglabā
     if (!saveWorkingState()) {
     showNotice(
         "❌ Izvēlētos datus neizdevās saglabāt.",
@@ -3296,25 +3045,19 @@ function restoreSelectedAreas() {
     return;
 }
     dataChanged = true;
-    // ==============================================
-    // PĀRZĪMĒ
-    // ==============================================
+    //✅ Pārzīmē
     render();
-    // Izveido backup ar jaunajiem datiem + foto
+    //✅ Izveido backup ar jaunajiem datiem + foto
     saveBackup();
     closeImportModal();
-    // ==============================================
-    // PAZIŅOJUMS
-    // ==============================================
+    //✅ Paziņojums
     showNotice(
         `✅ Pievienoti ${newEntries.length} jauni ieraksti no: ${selectedAreas.join(", ")}.
         📷 Atjaunoti ${photosAdded} apgabalu foto.`,
         "success"
     );
 }
-// ======================================================
 // 🤖 IELĀDĒ AI TESTA KODU TIKAI TEST LIETOTĀJIEM
-// ======================================================
 function loadAITestScript() {
     if (!isTestMode()) {
         return;
