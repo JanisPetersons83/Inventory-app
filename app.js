@@ -1426,7 +1426,6 @@ function edit(i) {
             document.getElementById("name").value = e.name;
             document.getElementById("productCode").value = e.code;
             document.getElementById("grade").value = e.grade || "";
-        }
     const selectedItem = document.querySelector(
         `.item[data-value="${e.grade}"]`
       );
