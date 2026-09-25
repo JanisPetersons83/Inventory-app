@@ -1372,7 +1372,7 @@ function render() {
         if (e.mode === "mixed") {
             size = `Dažādi (${e.packLength}×${e.packWidth}×${e.packHeight} mm; ${e.mixedFill}%)`;
         } else if ((e.length || "").trim().toLowerCase() === "gali") {
-            size = `${e.packWidth}×${e.packLength}×${e.packHeight}`;
+            size = `${e.packLength}×${e.packWidth}×${e.packHeight}`;
         } else {
             size = `${e.thickness}×${e.width}×${e.length}`;
         }
@@ -2843,7 +2843,7 @@ function renderImportAreas() {
                                                     const packages = Number(entry.packages) || 0;
                                             areaHtml += `
                                                 <div class="areaEntry">
-                                                    ${sizeText} | ${packages} pal.
+                                                    ${sizeText} | ${entry.grade || "-"} | ${packages} pal.
                                                 </div>
                                             `;
                                         }
