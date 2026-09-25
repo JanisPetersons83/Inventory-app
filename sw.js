@@ -68,13 +68,11 @@ self.addEventListener(
                     .then(keys => {
                         return Promise.all(
                             keys.map(key => {
-                                if (
-                                    key !== CACHE_NAME
-                                ) {
-                                    return caches.delete(
-                                        key
-                                    );
-                                }
+                                if (key !== CACHE_NAME) {
+                                    console.log("🗑 Dzēš cache:", key);
+                                    return caches.delete(key);
+                                    }
+                                return Promise.resolve();
                             })
                         );
                     }),
