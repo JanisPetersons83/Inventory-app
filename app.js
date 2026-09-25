@@ -3088,16 +3088,27 @@ function loadAITestScript() {
 }
 //✅ SERVICE WORKER
 if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/Inventory-app/sw.js")
-        .then(reg => {
-            console.log("SW registered");
-            setInterval(() => {
-                reg.update();
-            }, 60000);
-        })
-        .catch(err => console.log("SW error", err));
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-        console.log("New version loaded → reload");
-        window.location.reload();
-    });
+    let refreshing = false;
+        navigator.serviceWorker
+            .register("/Inventory-app/sw.js")
+            .then(async reg => {
+                console.log("SW registered");
+                    showNotice(
+                        "🔄 Pārbauda un ielādē jaunāko pieejamo versiju...",
+                        "info"
+                    );
+                await reg.update();
+            })
+            .catch(err =>
+                console.log("SW error", err)
+                );
+            navigator.serviceWorker.addEventListener("controllerchange", () => {
+                if (refreshing) return;
+                    refreshing = true;
+                console.log(
+                    "✅ Jaunā versija palaista"
+                );
+            window.location.reload();
+        }
+    );
 }
