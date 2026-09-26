@@ -572,8 +572,6 @@ function setMixedMode(active) {
             field.value = "";
         }
     }
-    document.getElementById("thickness").style.display = active ? "none" : "";
-    document.getElementById("width").style.display = active ? "none" : "";
     document.getElementById("GaliContainer").style.display = active ? "none" : "flex";
     document.querySelector(".piecesRow").style.display = active ? "none" : "flex";
     document.getElementById("galiBtn").disabled = active;
