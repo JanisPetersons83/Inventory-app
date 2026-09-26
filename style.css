@@ -1054,3 +1054,25 @@ background-color: #fff8d6 !important;
         font-size: 13px;
     }
 }
+.dimensionsRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 8px;
+}
+.dimensionsRow #thickness,
+.dimensionsRow #width {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+}
+.dimensionsRow #mixedBtn {
+    width: auto;
+    min-width: 82px;
+    margin: 0;
+}
+@media (max-width: 480px) {
+    .dimensionsRow #mixedBtn {
+        width: 82px;
+    }
+}
