@@ -1072,6 +1072,7 @@ background-color: #fff8d6 !important;
     width: auto;
     min-width: 0;
     white-space: nowrap;
+    align-self: center;
     padding-left: 10px;
     padding-right: 10px;
 }
