@@ -1076,3 +1076,10 @@ background-color: #fff8d6 !important;
         width: 82px;
     }
 }
+#mixedInputs {
+    grid-template-columns: minmax(0, 1fr);
+}
+#mixedInputs input {
+    width: 100%;
+    max-width: none;
+}
