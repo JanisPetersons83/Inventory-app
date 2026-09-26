@@ -1056,7 +1056,7 @@ background-color: #fff8d6 !important;
 }
 .dimensionsRow {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) max-content;
     align-items: stretch;
     gap: 8px;
 }
@@ -1065,16 +1065,15 @@ background-color: #fff8d6 !important;
     width: 100%;
     max-width: none;
     min-width: 0;
+    padding-left: 8px;
+    padding-right: 8px;
 }
 .dimensionsRow #mixedBtn {
     width: auto;
-    min-width: 82px;
-    margin: 0;
-}
-@media (max-width: 480px) {
-    .dimensionsRow #mixedBtn {
-        width: 82px;
-    }
+    min-width: 0;
+    white-space: nowrap;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 #mixedInputs {
     grid-template-columns: minmax(0, 1fr);
