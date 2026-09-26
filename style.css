@@ -1082,3 +1082,7 @@ background-color: #fff8d6 !important;
     width: 100%;
     max-width: none;
 }
+#mixedBtn,
+#galiBtn {
+    margin-top: 0;
+}
