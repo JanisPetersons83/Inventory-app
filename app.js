@@ -1400,10 +1400,14 @@ function render() {
 }
     // ✅ Delete
 function remove(i) {
-    data.splice(i, 1);
-    dataChanged = true;
-    localStorage.setItem("data", JSON.stringify(data));
-  render();
+    if (!confirm("Vai tiešām dzēst ierakstu?")) {
+        return;
+        }
+            data.splice(i, 1);
+            dataChanged = true;
+            localStorage.setItem("data", JSON.stringify(data));
+        saveBackup();
+    render();
 }
 // ✅ Edit
 function edit(i) {
@@ -2231,21 +2235,18 @@ function saveBackup() {
     const now = new Date();
     const inventoryMonth = now.getMonth() + 1;
     const inventoryYear = now.getFullYear();
-    const backup = {timestamp:
-            now.toISOString(),
+    const backup = {timestamp: now.toISOString(),
         user: localStorage.getItem("userName") || "",
         location: localStorage.getItem("location") || "",
         inventoryMonth,
         inventoryYear,
         inventoryPeriod: `${String(inventoryMonth)
                 .padStart(2, "0")}.${inventoryYear}`,
-        summary: {entries:
-                    data.length,
-                packages:
-                    totalPackages,
-                totalM3:
-                    Number(totalM3.toFixed(4))},
-        entries: data
+        summary: {entries: data.length,
+                packages: totalPackages,
+                totalM3: Number(totalM3.toFixed(4))},
+        entries: data, 
+        areaPhotos: areaPhotos
     };
     try {
         localStorage.setItem(
@@ -2369,11 +2370,7 @@ function exportBackupFile() {
         const storedBackup =
             JSON.parse(backupRaw);
         // 📷 FOTO PIEVIENO TIKAI EKSPORTĒJAMAJAM FAILAM
-        const exportBackup = {
-            ...storedBackup,
-            areaPhotos: {
-                ...areaPhotos
-            }
+        const exportBackup = storedBackup;
         };
         const location = safeFileName(exportBackup.location);
         const user = safeFileName(exportBackup.user);
