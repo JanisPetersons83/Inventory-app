@@ -1278,6 +1278,9 @@ function add() {
       }
   //✅ Jaunais ieraksts
   const entry = {
+    clientRecordId: editIndex !== null
+        ? (data[editIndex].clientRecordId || crypto.randomUUID())
+        : crypto.randomUUID(),
     area: areaVal,
     packages: packagesVal,
     thickness: isMixedMode ? null : thicknessVal,
