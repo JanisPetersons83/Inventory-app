@@ -2,7 +2,7 @@
 // 📦 SERVICE WORKER
 // ======================================================
 
-const CACHE_NAME = "inventory-app-v2-1-27";
+const CACHE_NAME = "inventory-app-v2-1-28";
 const BASE = "/Inventory-app";
 const urlsToCache = [
 
