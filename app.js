@@ -2374,7 +2374,6 @@ function exportBackupFile() {
             JSON.parse(backupRaw);
         // 📷 FOTO PIEVIENO TIKAI EKSPORTĒJAMAJAM FAILAM
         const exportBackup = storedBackup;
-        };
         const location = safeFileName(exportBackup.location);
         const user = safeFileName(exportBackup.user);
         const d = new Date();
