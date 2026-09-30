@@ -586,6 +586,8 @@ function setEntryMode(mode) {
     const panels = mode === "panels";
     const pallets = mode === "pallets";
             document.querySelector(".dimensionsRow").style.display = panels ? "none" : "";
+            document.getElementById("mixedBtn").style.display = pallets ? "none" : "";
+            document.getElementById("galiBtn").style.display = pallets ? "none" : "";
         for (const [id, active] of [
             ["mixedBtn", isMixedMode],
             ["galiBtn", isGaliMode],
