@@ -157,7 +157,27 @@
             </div>
         
             <!-- Izmēri -->
-        
+        <div class="entryModeButtons">
+            <button type="button"
+                    id="panelsBtn"
+                    onclick="togglePanels()"
+                    aria-pressed="false">
+                Produkti, paneļi
+            </button>
+            <button type="button"
+                    id="palletsBtn"
+                    onclick="togglePallets()"
+                    aria-pressed="false">
+                Paletes
+            </button>
+        </div>        
+        <div id="panelsInputs" style="display:none">
+            <input id="panelPieceM3"
+                   type="text"
+                   inputmode="decimal"
+                   autocomplete="off"
+                   placeholder="Vienas detaļas m³ *">
+        </div>
         <div class="row dimensionsRow">
             <input  id="thickness"
                     type="number"
@@ -535,6 +555,6 @@
                 }, 4000);
         </script>
     <script src="app.js"></script>
-    <footer class="footerVersion">versija: v.2-1-28</footer>
+    <footer class="footerVersion">versija: v.2-1-29</footer>
 </body>
 </html>
