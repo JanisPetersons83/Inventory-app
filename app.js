@@ -2051,7 +2051,7 @@ function addLegendRow(values, color) {
         //✅  B — Paku skaits
             e.packages,
         //✅  C — Detaļas nosaukums
-            e.name,
+            e.mode === "mixed" ? "Dažādi" : e.name,
         //✅  D — Produkta kods
             e.code,
         //✅  E — m3 vienā pakā
