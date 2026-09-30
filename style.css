@@ -1087,3 +1087,34 @@ background-color: #fff8d6 !important;
 #galiBtn {
     margin-top: 0;
 }
+/*jaunais*/
+.entryModeButtons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.entryModeButtons button {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+}
+
+.entryModeButtons button.active {
+    background: #1f4e46;
+    color: white;
+}
+
+#panelsInputs {
+    margin: 12px 0;
+}
+
+#panelPieceM3 {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#gradeBtn:disabled {
+    opacity: 1;
+}
