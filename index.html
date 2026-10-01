@@ -172,15 +172,30 @@
             </button>
         </div>        
         <div id="panelsInputs" style="display:none">
-            <input id="panelPieceM3"
-                   type="text"
-                   inputmode="decimal"
-                   autocomplete="off"
-                   placeholder="Vienas detaļas m³ *">
             <input id="panelCode"
+                type="text"
+                autocomplete="off"
+                placeholder="Produkta paneļa kods">
+            <input id="panelPieceM3"
+               type="text"
+               inputmode="decimal"
+               autocomplete="off"
+               placeholder="Vienas detaļas m³ *">
+            <div id="panelLibraryHint"
+                style="font-size:14px; margin:6px 0;"></div>
+            <button type="button" onclick="savePanelToLibrary()">
+                💾 Saglabāt detaļu bibliotēkā
+            </button>
+            <details style="margin:12px 0;">
+                <summary style="cursor:pointer;">
+                    📚 Detaļu bibliotēka
+                </summary>
+                <input id="panelLibrarySearch"
                    type="text"
                    autocomplete="off"
-                   placeholder="Produkta paneļa kods">
+                   placeholder="Meklēt pēc produkta vai paneļa koda">
+                <div id="panelLibraryList"></div>
+            </details>
         </div>
         <div class="row dimensionsRow">
             <input  id="thickness"
@@ -559,6 +574,6 @@
                 }, 4000);
         </script>
     <script src="app.js"></script>
-    <footer class="footerVersion">versija: v.2-1-32</footer>
+    <footer class="footerVersion">versija: v.2-1-33</footer>
 </body>
 </html>
