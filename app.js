@@ -1410,6 +1410,9 @@ if (panels || pallets) {
         mixedFill: mixedFill,
             mode: mode,
                 pieceM3: pieceM3,
+                panelCode: panels
+                    ? document.getElementById("panelCode").value.trim()
+                    : "",
                 palletFillFactor: pallets ? PALLET_FILL_FACTOR : null,
     pieces: piecesPerPack,
     avgLength: avgLength,
@@ -1550,6 +1553,7 @@ function edit(i) {
             document.getElementById("productCode").value = e.code;
             document.getElementById("grade").value = e.grade || "";
             document.getElementById("panelPieceM3").value = e.pieceM3 ?? "";
+            document.getElementById("panelCode").value = e.panelCode ?? "";
     const selectedItem = document.querySelector(
         `.item[data-value="${e.grade}"]`
       );
@@ -1902,6 +1906,7 @@ function clearError() {
     document.getElementById("error").innerText = "";
 }
 function clearForm(focus = true) {
+        document.getElementById("panelCode").value = "";
         document.getElementById("panelPieceM3").value = "";
     setMixedMode(false);
         for (const id of ["mixedLength", "mixedWidth", "mixedHeight", "mixedFill"]) {
@@ -2169,7 +2174,8 @@ function addLegendRow(values, color) {
         mode === "pallets" ? 1 : e.packages,
     //✅ C — Detaļas nosaukums
         mode === "mixed" ? "Dažādi" :
-        mode === "panels" ? "Paneļi" :
+        mode === "panels"
+            ? (e.panelCode ? `Paneļi - ${e.panelCode}` : "Paneļi") :
         mode === "pallets" ? "Paletes" : e.name,
     //✅ D — Produkta kods
         e.code,
@@ -3001,6 +3007,7 @@ function getEntryKey(e) {
         e.mode,
         e.mixedFill,
         e.pieceM3,
+        e.panelCode,
         e.palletFillFactor,
         e.month,
         e.year,
