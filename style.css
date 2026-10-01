@@ -1094,27 +1094,45 @@ background-color: #fff8d6 !important;
     gap: 10px;
     margin: 12px 0;
 }
-
 .entryModeButtons button {
     width: 100%;
     min-width: 0;
     margin: 0;
 }
-
 .entryModeButtons button.active {
     background: #1f4e46;
     color: white;
 }
-
 #panelsInputs {
     margin: 12px 0;
 }
-
 #panelPieceM3 {
     width: 100%;
     box-sizing: border-box;
 }
-
 #gradeBtn:disabled {
     opacity: 1;
+}
+/*m3 bibliotēkas saraksts*/
+#panelLibraryList {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+.panelLibraryRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+.panelLibraryRow span {
+    flex: 1 1 200px;
+    overflow-wrap: anywhere;
+}
+.panelLibraryRow button {
+    width: auto;
+    margin: 0;
+    padding: 8px 12px;
 }
