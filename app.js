@@ -1554,6 +1554,11 @@ function edit(i) {
             document.getElementById("grade").value = e.grade || "";
             document.getElementById("panelPieceM3").value = e.pieceM3 ?? "";
             document.getElementById("panelCode").value = e.panelCode ?? "";
+        panelAutoValue = null;
+            document.getElementById("panelLibraryHint").textContent =
+                e.mode === "panels"
+                    ? "Ieraksta saglabātā m³ vērtība."
+                    : "";
     const selectedItem = document.querySelector(
         `.item[data-value="${e.grade}"]`
       );
@@ -1590,6 +1595,7 @@ function edit(i) {
                 "inline-block";
 }
 window.onload = () => {
+    initPanelLibrary();
     clearForm(false);
     document.getElementById("year").value = "";
     loadRecentUsers();
@@ -1906,6 +1912,8 @@ function clearError() {
     document.getElementById("error").innerText = "";
 }
 function clearForm(focus = true) {
+    panelAutoValue = null;
+        document.getElementById("panelLibraryHint").textContent = "";
         document.getElementById("panelCode").value = "";
         document.getElementById("panelPieceM3").value = "";
     setMixedMode(false);
@@ -2393,7 +2401,8 @@ function saveBackup() {
                 packages: totalPackages,
                 totalM3: Number(totalM3.toFixed(4))},
         entries: data, 
-        areaPhotos: areaPhotos
+        areaPhotos: areaPhotos,
+        panelLibrary: panelLibrary
     };
     try {
         localStorage.setItem(
@@ -2472,6 +2481,7 @@ if (!saveWorkingState()) {
         );
     return;
 }
+    mergePanelLibrary(backup.panelLibrary);
     dataChanged = false;
     render();
     closeRestoreModal();
@@ -2778,6 +2788,11 @@ Backup ražotne: ${
             duplicates,
             user: combinedUser,
             entries: uniqueEntries,
+            panelLibrary: backups.flatMap(backup =>
+                Array.isArray(backup.panelLibrary)
+                    ? backup.panelLibrary
+                    : []
+                ),
             summary: combinedSummary,
             inventoryMonth:
                 backups[0].inventoryMonth,
@@ -3089,7 +3104,8 @@ if (data.length > 0) {
         }
     //✅ Pārzīmē App
     render();
-    //✅ Izveido jauno lokālo backup
+    //✅ Atjauno bibliotēku un izveido lokālo backup
+    mergePanelLibrary(importedBackup.panelLibrary);
     saveBackup();
     closeImportModal();
     //✅ PAZIŅOJUMS
