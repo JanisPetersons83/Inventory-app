@@ -1136,3 +1136,20 @@ background-color: #fff8d6 !important;
     margin: 0;
     padding: 8px 12px;
 }
+/* Neaktīvie ievades lauki */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    background-color: #d1d5db;
+    border-color: #9ca3af;
+    color: #606770;
+    -webkit-text-fill-color: #606770;
+    opacity: 1;
+}
+/* Teksts tukšā neaktīvā laukā */
+input:disabled::placeholder,
+textarea:disabled::placeholder {
+    color: #707780;
+    -webkit-text-fill-color: #707780;
+    opacity: 1;
+}
