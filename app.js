@@ -585,6 +585,16 @@ function setEntryMode(mode) {
         isGaliMode = mode === "gali";
     const panels = mode === "panels";
     const pallets = mode === "pallets";
+        // Paneļu režīmā produkta kods ir virs detaļas koda.
+        // Pārējos režīmos tas atgriežas sākotnējā vietā.
+    const productCodeInput = document.getElementById("productCode");
+    const productCodeHome = document.getElementById("productCodeHome");
+    const panelsInputs = document.getElementById("panelsInputs");
+        if (panels) {
+            panelsInputs.prepend(productCodeInput);
+            } else {
+            productCodeHome.after(productCodeInput);
+            }
             document.querySelector(".dimensionsRow").style.display = panels ? "none" : "";
             document.getElementById("mixedBtn").style.display = pallets ? "none" : "";
             document.getElementById("galiBtn").style.display = pallets ? "none" : "";
