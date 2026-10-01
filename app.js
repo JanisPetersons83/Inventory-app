@@ -3253,3 +3253,281 @@ if ("serviceWorker" in navigator) {
         }
     );
 }
+    const PANEL_LIBRARY_KEY = "inventory.panelLibrary.v1";
+    let panelLibrary = [];
+    let panelAutoValue = null;
+    let panelLibraryReady = false;
+function panelLibraryPair(productCode, panelCode) {
+    return JSON.stringify([
+        String(productCode).trim(),
+        String(panelCode).trim()
+    ]);
+}
+function cleanPanelLibraryItem(item) {
+        if (!item || typeof item.productCode !== "string" || typeof item.panelCode !== "string"
+            ) {return null;}
+    const productCode = item.productCode.trim();
+    const panelCode = item.panelCode.trim();
+    const pieceM3 = Number(String(item.pieceM3 ?? "").trim().replace(",", "."));
+        if (!productCode || !panelCode || !Number.isFinite(pieceM3) || pieceM3 <= 0
+            ) {return null;}
+        return { productCode, panelCode, pieceM3 };
+}
+function initPanelLibrary() {
+    try {
+        const saved = JSON.parse(
+            localStorage.getItem(PANEL_LIBRARY_KEY) || "[]"
+        );
+        if (!Array.isArray(saved)) {
+            throw new Error("Bojāta bibliotēka");
+        }
+        const unique = new Map();
+            for (const raw of saved) {
+                const item = cleanPanelLibraryItem(raw);
+                    if (!item) {
+                        throw new Error("Bojāts bibliotēkas ieraksts");
+                        }
+            unique.set(panelLibraryPair(item.productCode, item.panelCode), item);
+            }
+        panelLibrary = [...unique.values()];
+        panelLibraryReady = true;
+        } catch (error) {
+        panelLibraryReady = false;
+        showNotice(
+            "Detaļu bibliotēku nevar nolasīt. " +
+            "Saglabātie dati nav pārrakstīti.",
+            "error"
+            );
+        }
+    for (const id of ["productCode", "panelCode"]) {
+        document.getElementById(id).addEventListener("input", fillPanelFromLibrary);
+        }
+        document.getElementById("panelPieceM3")
+            .addEventListener("input", () => {
+                panelAutoValue = null;
+                document.getElementById("panelLibraryHint").textContent = "Manuāli ievadīta m³ vērtība.";
+            });
+        document.getElementById("panelLibrarySearch")
+            .addEventListener("input", renderPanelLibrary);
+    renderPanelLibrary();
+}
+function fillPanelFromLibrary() {
+        if (currentEntryMode !== "panels") return;
+    const field = document.getElementById("panelPieceM3");
+    const hint = document.getElementById("panelLibraryHint");
+    const productCode = document.getElementById("productCode").value.trim();
+    const panelCode = document.getElementById("panelCode").value.trim();
+    const key = panelLibraryPair(productCode, panelCode);
+    const item = panelLibrary.find(item =>
+        panelLibraryPair(item.productCode, item.panelCode) === key
+        );
+        if (item) {
+            field.value = String(item.pieceM3);
+            panelAutoValue = field.value;
+            hint.textContent = "m³ aizpildīts no bibliotēkas. Vērtību vari mainīt.";
+            } else {
+            // Notīra iepriekš automātiski aizpildītu vērtību.
+            if (panelAutoValue !== null && field.value === panelAutoValue
+                ) {field.value = "";}
+                panelAutoValue = null;
+                hint.textContent = productCode && panelCode
+                    ? "Bibliotēkā nav atrasts. Ievadi m³ manuāli."
+                    : "Ievadi produkta un paneļa kodu.";
+            }
+}
+function commitPanelLibrary(next) {
+    if (!panelLibraryReady) {
+        showNotice(
+            "Bibliotēka nav ielādēta; izmaiņas nav saglabātas.",
+            "error");
+        return false;}
+    try {
+        localStorage.setItem(
+            PANEL_LIBRARY_KEY,
+            JSON.stringify(next));
+    } catch (error) {
+        showNotice(
+            "Neizdevās saglabāt detaļu bibliotēku.",
+            "error");
+        return false;
+    }
+    panelLibrary = next;
+    renderPanelLibrary();
+    dataChanged = true;
+    saveBackup();
+    return true;
+}
+function savePanelToLibrary() {
+        if (currentEntryMode !== "panels") return;
+    const item = cleanPanelLibraryItem({
+        productCode: document.getElementById("productCode").value,
+        panelCode: document.getElementById("panelCode").value,
+        pieceM3: document.getElementById("panelPieceM3").value
+        });
+        if (!item) {
+            showNotice(
+                "Ievadi abus kodus un pozitīvu vienas detaļas m³.",
+                "error");
+            return;
+            }
+    const key = panelLibraryPair(item.productCode, item.panelCode);
+    const old = panelLibrary.find(x =>
+        panelLibraryPair(x.productCode, x.panelCode) === key
+        );
+        if (
+            old && old.pieceM3 !== item.pieceM3 && !confirm(
+                `Mainīt šīs detaļas m³ no ${old.pieceM3} ` +
+                `uz ${item.pieceM3}?`
+                )
+            ) {
+            return;
+            }
+    const next = panelLibrary.filter(x => panelLibraryPair(x.productCode, x.panelCode) !== key);
+        next.push(item);
+        if (commitPanelLibrary(next)) {
+            showNotice("Detaļa saglabāta bibliotēkā.", "success");
+            }
+}
+function editPanelLibraryItem(key) {
+    const old = panelLibrary.find(x => panelLibraryPair(x.productCode, x.panelCode) === key);
+        if (!old) return;
+    const productCode = prompt("Produkta kods:", old.productCode);
+        if (productCode === null) return;
+    const panelCode = prompt("Paneļa kods:", old.panelCode);
+        if (panelCode === null) return;
+    const pieceM3 = prompt(
+            "Vienas detaļas m³:",
+            String(old.pieceM3));
+        if (pieceM3 === null) return;
+    const item = cleanPanelLibraryItem({
+        productCode,
+        panelCode,
+        pieceM3
+        });
+        if (!item) {
+            showNotice(
+                "Abi kodi un pozitīva m³ vērtība ir obligāti.",
+                "error");
+            return;
+        }
+    const newKey = panelLibraryPair(
+        item.productCode,
+        item.panelCode);
+        if (newKey !== key && panelLibrary.some(x =>
+            panelLibraryPair(x.productCode, x.panelCode) === newKey)
+            ) {
+            showNotice(
+                "Šāds kodu pāris jau ir bibliotēkā. " +
+                "Izvēlies tā ieraksta labošanu.",
+                "error");
+            return;
+            }
+    const next = panelLibrary.map(x =>
+        panelLibraryPair(x.productCode, x.panelCode) === key
+            ? item
+            : x);
+        if (commitPanelLibrary(next)) {
+            showNotice("Bibliotēkas ieraksts izlabots.", "success");
+            }
+}
+function deletePanelLibraryItem(key) {
+    const item = panelLibrary.find(x =>
+        panelLibraryPair(x.productCode, x.panelCode) === key);
+        if (!item || !confirm(
+            `Dzēst ${item.productCode} / ${item.panelCode} ` +
+            "no bibliotēkas?")
+            ) {
+            return;
+            }
+    const next = panelLibrary.filter(x =>
+        panelLibraryPair(x.productCode, x.panelCode) !== key);
+        if (commitPanelLibrary(next)) {
+            showNotice("Detaļa dzēsta no bibliotēkas.", "success");
+            }
+}
+function renderPanelLibrary() {
+    const list = document.getElementById("panelLibraryList");
+    list.replaceChildren();
+    const query = document.getElementById("panelLibrarySearch")
+        .value.trim().toLowerCase();
+    const items = panelLibrary
+        .filter(x =>
+            `${x.productCode} ${x.panelCode}`
+                .toLowerCase().includes(query)
+        )
+        .slice()
+        .sort((a, b) =>
+            a.productCode.localeCompare(
+                b.productCode, "lv", { numeric: true }
+            ) ||
+            a.panelCode.localeCompare(
+                b.panelCode, "lv", { numeric: true }
+            )
+        );
+    if (!items.length) {
+        list.textContent = "Nav atrastu detaļu.";
+        return;
+    }
+    for (const item of items) {
+        const row = document.createElement("div");
+        row.className = "panelLibraryRow";
+        const label = document.createElement("span");
+        label.textContent =
+            `${item.productCode} / ${item.panelCode} — ` +
+            `${item.pieceM3} m³`;
+        row.append(label);
+        const key = panelLibraryPair(
+            item.productCode,
+            item.panelCode
+        );
+        for (const [title, action] of [
+            ["Labot", editPanelLibraryItem],
+            ["Dzēst", deletePanelLibraryItem]
+        ]) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = title;
+            button.addEventListener("click", () => action(key));
+            row.append(button);
+        }
+        list.append(row);
+    }
+}
+function mergePanelLibrary(incoming) {
+    if (!Array.isArray(incoming)) return;
+    const next = panelLibrary.slice();
+    const known = new Map(
+        next.map(x => [
+            panelLibraryPair(x.productCode, x.panelCode),
+            x
+        ])
+    );
+    let added = 0;
+    let conflicts = 0;
+    for (const raw of incoming) {
+        const item = cleanPanelLibraryItem(raw);
+        if (!item) continue;
+        const key = panelLibraryPair(
+            item.productCode,
+            item.panelCode
+        );
+        const old = known.get(key);
+        if (old) {
+            if (old.pieceM3 !== item.pieceM3) conflicts++;
+            continue;
+        }
+        known.set(key, item);
+        next.push(item);
+        added++;
+    }
+    if (added) {
+        commitPanelLibrary(next);
+    }
+    if (conflicts) {
+        alert(
+            `Bibliotēkā ${conflicts} ierakstiem atšķīrās m³.\n` +
+            "Saglabātas jau esošās vērtības. " +
+            "Pārskati tās bibliotēkā."
+        );
+    }
+}
