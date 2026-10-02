@@ -188,9 +188,12 @@
                placeholder="Vienas detaļas m³ *">
             <div id="panelLibraryHint"
                 style="font-size:14px; margin:6px 0;"></div>
-            <button type="button" onclick="savePanelToLibrary()">
-                💾 Saglabāt detaļu bibliotēkā
-            </button>
+                    <button type="button"
+                        id="savePanelLibraryBtn"
+                        style="display:none"
+                        onclick="savePanelToLibrary()">
+                            💾 Saglabāt detaļu bibliotēkā
+                    </button>
             <details style="margin:12px 0;">
                 <summary style="cursor:pointer;">
                     📚 Detaļu bibliotēka
@@ -580,6 +583,6 @@
                 }, 4000);
         </script>
     <script src="app.js"></script>
-    <footer class="footerVersion">versija: v.2-1-38</footer>
+    <footer class="footerVersion">versija: v.2-1-39</footer>
 </body>
 </html>
