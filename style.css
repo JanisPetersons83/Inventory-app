@@ -1161,3 +1161,26 @@ textarea:disabled::placeholder {
     box-shadow: inset 4px 0 0 #1f4e46;
     font-weight: 600;
 }
+#panelCodeSuggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 6px 0 12px;
+}
+#panelCodeSuggestions:empty {
+    display: none;
+}
+.panelSuggestionsLabel {
+    flex-basis: 100%;
+    font-size: 14px;
+    color: #52635e;
+}
+#panelCodeSuggestions .panelSuggestionButton {
+    width: auto;
+    margin: 0;
+    padding: 8px 14px;
+    border: 1px solid #aac8bc;
+    border-radius: 10px;
+    background-color: #e2eee8;
+    color: #1f4e46;
+}
