@@ -92,9 +92,13 @@
                 multiple
                 class="hidden"
                 onchange="importAnalysisBackup(event)">
-            <button onclick="renderDimensionAnalysis()">
-                📏 Dimensijas
-            </button>
+            <input
+                id="dimensionAnalysisSearch"
+                type="search"
+                autocomplete="off"
+                placeholder="📏 Meklēt dimensijas, piem. 28×145"
+                aria-label="Meklēt dimensijas"
+                oninput="renderDimensionAnalysis()">
             <div class="materialTabs">
                 <button id="mat_egle"
                     class="active"
