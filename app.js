@@ -3584,6 +3584,10 @@ function renderPanelCodeSuggestions() {
                     const button = document.createElement("button");
                         button.type = "button";
                         button.className = "panelSuggestionButton";
+                    const selected = document.getElementById("panelCode").value.trim() ===
+                        item.panelCode;
+                            button.classList.toggle("selected", selected);
+                            button.setAttribute("aria-pressed", String(selected));
                         button.textContent = item.panelCode;
                         button.addEventListener("click", () => {
                             document.getElementById("panelCode").value = item.panelCode;
