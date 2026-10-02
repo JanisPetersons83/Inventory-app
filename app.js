@@ -400,6 +400,19 @@ function setMaterialFilter(type) {
   renderDimensionAnalysis();
 }
 function renderDimensionAnalysis() {
+    // Vienādi apstrādā 28×145, 28x145 un 28 145.
+    const normalizeDimension = value =>
+        String(value ?? "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s*[×xх*]\s*/gi, "x")
+            .replace(/\s+/g, "x");
+    const search = normalizeDimension(
+        document.getElementById("dimensionAnalysisSearch")?.value
+    );
+    const matchesSearch = size =>
+        search !== "" &&
+        normalizeDimension(size).includes(search);
     let filteredData = analysisData;
         const groups = {};
             if (selectedMaterial === "egle") {
@@ -439,12 +452,14 @@ function renderDimensionAnalysis() {
                     </thead>
                     <tbody>`;
                         Object.entries(groups)
-                            .sort(([a], [b]) =>
-                                a.localeCompare(b, undefined, { numeric: true })
-                                )
+                            .sort(([a], [b]) => {
+                                // Atrastās dimensijas saraksta sākumā.
+                                const matchOrder = Number(matchesSearch(b)) - Number(matchesSearch(a));
+                                    return matchOrder || a.localeCompare(b, "lv", { numeric: true });
+                                })
                             .forEach(([size, info]) => {
                         html += `
-                            <tr>
+                            <tr class="${matchesSearch(size) ? "dimensionSearchMatch" : ""}">
                                 <td onclick="toggleDimension('${size}')"
                                     style="cursor:pointer;">
                                     ${expandedDimension === size ? "▼" : "▶"} ${size}
