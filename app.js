@@ -3336,6 +3336,14 @@ function initPanelLibrary() {
         document.getElementById("panelLibrarySearch")
             .addEventListener("input", renderPanelLibrary);
     renderPanelLibrary();
+    for (const id of ["productCode", "panelCode", "panelPieceM3"]) {
+        document.getElementById(id).addEventListener(
+            "input",
+        updatePanelLibrarySaveButton
+    );
+}
+
+updatePanelLibrarySaveButton();
 }
 function fillPanelFromLibrary() {
         if (currentEntryMode !== "panels") return;
@@ -3473,6 +3481,7 @@ function deletePanelLibraryItem(key) {
             }
 }
 function renderPanelLibrary() {
+    updatePanelLibrarySaveButton();
     renderPanelCodeSuggestions();
     const list = document.getElementById("panelLibraryList");
     list.replaceChildren();
@@ -3596,4 +3605,25 @@ function renderPanelCodeSuggestions() {
         });
         container.appendChild(button);
     });
+}
+function updatePanelLibrarySaveButton() {
+    const button = document.getElementById("savePanelLibraryBtn");
+        if (!button) return;
+    const item = cleanPanelLibraryItem({
+        productCode: document.getElementById("productCode").value,
+        panelCode: document.getElementById("panelCode").value,
+        pieceM3: document.getElementById("panelPieceM3").value
+        });
+    let show = false;
+        if (currentEntryMode === "panels" && item) {
+            const existing = panelLibrary.find(saved =>
+                saved.productCode === item.productCode &&
+                saved.panelCode === item.panelCode
+                );
+        show = !existing || existing.pieceM3 !== item.pieceM3;
+        button.textContent = existing
+            ? "💾 Saglabāt izmaiņas bibliotēkā"
+            : "💾 Saglabāt detaļu bibliotēkā";
+    }
+    button.style.display = show ? "" : "none";
 }
