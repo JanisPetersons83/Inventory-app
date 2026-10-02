@@ -669,6 +669,7 @@ function setEntryMode(mode) {
         for (const id of ["thickness", "width"]) {
             document.getElementById(id).classList.remove("aiAttention");
         }
+    renderPanelCodeSuggestions();
 }
 function setMixedMode(active) {
     setEntryMode(active ? "mixed" : "standard");
@@ -3338,6 +3339,7 @@ function initPanelLibrary() {
 }
 function fillPanelFromLibrary() {
         if (currentEntryMode !== "panels") return;
+            renderPanelCodeSuggestions();
     const field = document.getElementById("panelPieceM3");
     const hint = document.getElementById("panelLibraryHint");
     const productCode = document.getElementById("productCode").value.trim();
@@ -3471,6 +3473,7 @@ function deletePanelLibraryItem(key) {
             }
 }
 function renderPanelLibrary() {
+    renderPanelCodeSuggestions();
     const list = document.getElementById("panelLibraryList");
     list.replaceChildren();
     const query = document.getElementById("panelLibrarySearch")
@@ -3555,4 +3558,38 @@ function mergePanelLibrary(incoming) {
             "Pārskati tās bibliotēkā."
         );
     }
+}
+function renderPanelCodeSuggestions() {
+    const container = document.getElementById("panelCodeSuggestions");
+        if (!container) return;
+            container.replaceChildren();
+        if (currentEntryMode !== "panels") return;
+    const productCode = document.getElementById("productCode").value.trim();
+        if (!productCode) return;
+    const items = panelLibrary
+        .filter(item => item.productCode === productCode)
+        .sort((a, b) =>
+            a.panelCode.localeCompare(
+                b.panelCode,
+                "lv",
+                { numeric: true }
+            )
+        );
+        if (items.length === 0) return;
+    const label = document.createElement("div");
+        label.className = "panelSuggestionsLabel";
+        label.textContent = "Saglabātie paneļi:";
+            container.appendChild(label);
+                items.forEach(item => {
+                    const button = document.createElement("button");
+                        button.type = "button";
+                        button.className = "panelSuggestionButton";
+                        button.textContent = item.panelCode;
+                        button.addEventListener("click", () => {
+                            document.getElementById("panelCode").value = item.panelCode;
+            // Esošā bibliotēkas funkcija aizpilda m³.
+            fillPanelFromLibrary();
+        });
+        container.appendChild(button);
+    });
 }
