@@ -1153,3 +1153,11 @@ textarea:disabled::placeholder {
     -webkit-text-fill-color: #707780;
     opacity: 1;
 }
+/* Meklēšanā atrastās dimensijas */
+#analysisView tr.dimensionSearchMatch > td {
+    background-color: #dcece6;
+}
+#analysisView tr.dimensionSearchMatch > td:first-child {
+    box-shadow: inset 4px 0 0 #1f4e46;
+    font-weight: 600;
+}
