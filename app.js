@@ -1115,6 +1115,7 @@ function saveUser() {
         "userName",
         name
     );
+    syncUserId(name);
     saveRecentUser(cleanName);
     document.getElementById("locationSelect")
         .style.display = "none";
