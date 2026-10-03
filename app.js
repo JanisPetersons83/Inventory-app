@@ -1038,6 +1038,52 @@ function setHeaderInfo() {
         document.getElementById("infoLine").innerText =
             `${location} | ${name}${testText} | ${date}`;
 }
+async function syncUserId(userName) {
+    try {
+        const response = await fetch(
+            "http://127.0.0.1:5000/api/find-user",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user: userName
+                })
+            }
+        );
+        if (!response.ok) {
+            console.log(
+                "Lietotājs SQL nav atrasts:",
+                userName
+            );
+            return null;
+        }
+        const result = await response.json();
+        if (
+            result.status === "ok" &&
+            result.userId
+        ) {
+            localStorage.setItem(
+                "userId",
+                String(result.userId)
+            );
+            console.log(
+                "SQL userId saglabāts:",
+                result.userId
+            );
+            return result.userId;
+        }
+        return null;
+    } catch (error) {
+        // Serveris nav pieejams.
+        // PWA turpina strādāt offline.
+        console.log(
+            "Serveris nav pieejams. Darbs turpinās offline."
+        );
+        return null;
+    }
+}
 function saveUser() {
     const input = document.getElementById("userNameInput");
     const name = input
@@ -1055,6 +1101,12 @@ function saveUser() {
     const cleanName = name
         .replace(/\s+test$/i, "")
         .trim();
+    // Ja izvēlēts cits lietotājs,
+    // vecais SQL userId vairs nav derīgs.
+    const savedUserName = localStorage.getItem("userName");
+        if (savedUserName !== name) {
+            localStorage.removeItem("userId");
+            }
     localStorage.setItem(
         "sessionStart",
         String(Date.now())
