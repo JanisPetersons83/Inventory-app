@@ -1086,6 +1086,37 @@ async function syncUserId(userName) {
         return null;
     }
 }
+async function testSendInventory(entry) {
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/api/test-inventory`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(entry)
+            }
+        );
+
+        const result = await response.json();
+
+        console.log(
+            "TESTA ieraksts nosūtīts serverim:",
+            result
+        );
+
+        return result;
+
+    } catch (error) {
+        console.log(
+            "TESTA nosūtīšana neizdevās:",
+            error
+        );
+
+        return null;
+    }
+}
 function saveUser() {
     const input = document.getElementById("userNameInput");
     const name = input
@@ -1371,21 +1402,21 @@ function add() {
             let avgLength = null;
             let mixedFill = null;
             let pieceM3 = null;
-  //✅ Dažādi un Gali režīms
-        // Paneļi, paletes, Dažādi un Gali.
-if (panels || pallets) {
-        piecesPerPack = Number(document.getElementById("pieces").value);
-    if (!Number.isInteger(piecesPerPack) || piecesPerPack <= 0) {
-        return error(
-            "Ievadi gabalu skaitu",
-            "pieces"
-        );
-    }
-    if (panels) {
-        pieceM3 = Number(
+        //✅ Dažādi un Gali režīms
+        //✅ Paneļi, paletes, Dažādi un Gali.
+        if (panels || pallets) {
+            piecesPerPack = Number(document.getElementById("pieces").value);
+        if (!Number.isInteger(piecesPerPack) || piecesPerPack <= 0) {
+            return error(
+                "Ievadi gabalu skaitu",
+                "pieces"
+            );
+        }
+        if (panels) {
+            pieceM3 = Number(
             document.getElementById("panelPieceM3")
                 .value.trim().replace(",", ".")
-        );
+            );
         if (!Number.isFinite(pieceM3) || pieceM3 <= 0) {
             return error(
                 "Ievadi vienas detaļas m³",
@@ -1539,6 +1570,13 @@ if (panels || pallets) {
     JSON.stringify(data)
   );
   saveBackup();
+    // 🧪 TESTS — nosūta ierakstu serverim
+testSendInventory({
+    ...entry,
+    userId: localStorage.getItem("userId"),
+    userName: localStorage.getItem("userName"),
+    location: localStorage.getItem("location")
+});
   //✅ Formas attīrīšana
   clearError();
   render();
