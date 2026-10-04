@@ -1,3 +1,4 @@
+const API_BASE_URL = "https://quality-distinction-backed-katie.trycloudflare.com";
 let data = [];
 let analysisData = [];
 let analysisFiles = [];
@@ -1041,7 +1042,7 @@ function setHeaderInfo() {
 async function syncUserId(userName) {
     try {
         const response = await fetch(
-            "http://127.0.0.1:5000/api/find-user",
+            `${API_BASE_URL}/api/find-user`,
             {
                 method: "POST",
                 headers: {
@@ -1062,12 +1063,13 @@ async function syncUserId(userName) {
         const result = await response.json();
         if (
             result.status === "ok" &&
-            result.userId
-        ) {
+            result.userId &&
+            localStorage.getItem("userName") === userName
+            ) {
             localStorage.setItem(
                 "userId",
                 String(result.userId)
-            );
+                );
             console.log(
                 "SQL userId saglabāts:",
                 result.userId
