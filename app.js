@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://quality-distinction-backed-katie.trycloudflare.com";
+const API_BASE_URL = "https://jar-chi-trivia-profiles.trycloudflare.com";
 let data = [];
 let analysisData = [];
 let analysisFiles = [];
