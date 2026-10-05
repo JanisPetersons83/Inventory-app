@@ -1116,6 +1116,47 @@ async function testSendInventory(entry) {
                 return false;
                 }
 }
+async function syncPendingEntries() {
+    const pendingEntries = data.filter(entry =>
+        entry.synced !== true
+        );
+    if (pendingEntries.length === 0) {
+        console.log("Nav nesinhronizētu ierakstu.");
+        return;
+    }
+    console.log(
+        `Atrasti ${pendingEntries.length} nesinhronizēti ieraksti.`
+    );
+    for (const entry of pendingEntries) {
+        const success = await testSendInventory({
+            ...entry,
+            userId: localStorage.getItem("userId"),
+            userName: localStorage.getItem("userName"),
+            location: localStorage.getItem("location")
+        });
+        if (!success) {
+            console.log(
+                "Sinhronizācija neizdevās:",
+                entry.clientRecordId
+            );
+            continue;
+        }
+        const savedEntry = data.find(e =>
+            e.clientRecordId === entry.clientRecordId
+        );
+        if (savedEntry) {
+            savedEntry.synced = true;
+        }
+    }
+    localStorage.setItem(
+        "data",
+        JSON.stringify(data)
+    );
+    saveBackup();
+    console.log(
+        "Nesinhronizēto ierakstu pārbaude pabeigta."
+    );
+}
 function saveUser() {
     const input = document.getElementById("userNameInput");
     const name = input
@@ -2640,6 +2681,8 @@ if (!saveWorkingState()) {
     previousArea = null;
     photoTargetArea = null;
     renderAreaPhotoPanel(null);
+    // Pārbauda un sinhronizē no backup atjaunotos ierakstus
+    syncPendingEntries();
 }
 function discardBackup() {
   localStorage.removeItem("backupData");
