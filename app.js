@@ -1099,24 +1099,22 @@ async function testSendInventory(entry) {
                 body: JSON.stringify(entry)
             }
         );
-
         const result = await response.json();
-
-        console.log(
-            "TESTA ieraksts nosūtīts serverim:",
-            result
-        );
-
-        return result;
-
-    } catch (error) {
-        console.log(
-            "TESTA nosūtīšana neizdevās:",
-            error
-        );
-
-        return null;
-    }
+            console.log(
+                "Ieraksta sinhronizācijas rezultāts:", result);
+            if (response.ok && (
+                result.status === "saved" ||
+                result.status === "duplicate"
+                )
+                ) {
+            return true;
+            }
+            return false;
+            } catch (error) {
+                console.log(
+                    "TESTA nosūtīšana neizdevās:", error);
+                return false;
+                }
 }
 function saveUser() {
     const input = document.getElementById("userNameInput");
@@ -1545,7 +1543,8 @@ function add() {
             : document.getElementById("grade").value,
     comment: document.getElementById("comment").value,
     m3Pack: m3PerPack,
-    total: totalM3
+    total: totalM3,
+    synced: false
   };
   //✅ Labošana / jauns ieraksts
   if (editIndex !== null) {
@@ -1576,11 +1575,26 @@ function add() {
     savePanelEntryToLibrary(entry);
     saveBackup();
     // 🧪 TESTS — nosūta ierakstu serverim
-testSendInventory({
-    ...entry,
-    userId: localStorage.getItem("userId"),
-    userName: localStorage.getItem("userName"),
-    location: localStorage.getItem("location")
+    testSendInventory({...entry,
+        userId: localStorage.getItem("userId"),
+        userName: localStorage.getItem("userName"),
+        location: localStorage.getItem("location")
+        }).then(success => {
+        if (!success) return;
+            const savedEntry = data.find(e =>
+                e.clientRecordId === entry.clientRecordId
+                );
+        if (!savedEntry) return;
+            savedEntry.synced = true;
+            localStorage.setItem(
+                "data",
+                JSON.stringify(data)
+            );
+    saveBackup();
+    console.log(
+        "Ieraksts atzīmēts kā sinhronizēts:",
+        entry.clientRecordId
+    );
 });
   //✅ Formas attīrīšana
   clearError();
