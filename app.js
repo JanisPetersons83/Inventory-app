@@ -1089,7 +1089,7 @@ async function syncUserId(userName) {
 async function testSendInventory(entry) {
     try {
         const response = await fetch(
-            `${API_BASE_URL}/api/test-inventory`,
+            `${API_BASE_URL}/api/inventory`,
             {
                 method: "POST",
                 headers: {
