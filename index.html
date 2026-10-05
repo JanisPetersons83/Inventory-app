@@ -182,10 +182,17 @@
                 placeholder="Produkta paneļa kods">
                 <div id="panelCodeSuggestions"></div>
             <input id="panelPieceM3"
-               type="text"
-               inputmode="decimal"
-               autocomplete="off"
-               placeholder="Vienas detaļas m³ *">
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                placeholder="Vienas detaļas m³ *"
+                oninput="syncPanelVolumes('piece')">
+            <input id="panelPackM3"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                placeholder="m³ vienā pakā / paletē *"
+                oninput="syncPanelVolumes('pack')">
             <div id="panelLibraryHint"
                 style="font-size:14px; margin:6px 0;"></div>
                     <button type="button"
@@ -583,6 +590,6 @@
                 }, 4000);
         </script>
     <script src="app.js"></script>
-    <footer class="footerVersion">versija: v.2-1-42</footer>
+    <footer class="footerVersion">versija: v.2-1-43</footer>
 </body>
 </html>
