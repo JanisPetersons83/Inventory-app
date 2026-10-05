@@ -1413,6 +1413,7 @@ function add() {
             );
         }
         if (panels) {
+            syncPanelVolumes();
             pieceM3 = Number(
             document.getElementById("panelPieceM3")
                 .value.trim().replace(",", ".")
@@ -1431,7 +1432,9 @@ function add() {
             }
         pieceM3 = thicknessVal * widthVal * lengthNum / 1000000000 * PALLET_FILL_FACTOR;
     }
-        m3PerPack = pieceM3 * piecesPerPack;
+        m3PerPack = panels && panelVolumeSource === "pack"
+            ? readPanelNumber("panelPackM3")
+            : pieceM3 * piecesPerPack;
         totalM3 = m3PerPack * packagesVal;
     } else if (isMixedMode) {
             packLength = Number(document.getElementById("mixedLength").value);
@@ -1569,7 +1572,8 @@ function add() {
     "data",
     JSON.stringify(data)
   );
-  saveBackup();
+    savePanelEntryToLibrary(entry);
+    saveBackup();
     // 🧪 TESTS — nosūta ierakstu serverim
 testSendInventory({
     ...entry,
@@ -1673,6 +1677,11 @@ function edit(i) {
             document.getElementById("grade").value = e.grade || "";
             document.getElementById("panelPieceM3").value = e.pieceM3 ?? "";
             document.getElementById("panelCode").value = e.panelCode ?? "";
+            panelVolumeSource = "piece";
+                document.getElementById("panelPackM3").value = getEntryMode(e) === "panels"
+                    ? (e.m3Pack ?? (e.pieceM3 * e.pieces))
+                    : "";
+                renderPanelCodeSuggestions();
         panelAutoValue = null;
             document.getElementById("panelLibraryHint").textContent =
                 e.mode === "panels"
@@ -2032,6 +2041,8 @@ function clearError() {
 }
 function clearForm(focus = true) {
     panelAutoValue = null;
+    panelVolumeSource = "piece";
+    document.getElementById("panelPackM3").value = "";
         document.getElementById("panelLibraryHint").textContent = "";
         document.getElementById("panelCode").value = "";
         document.getElementById("panelPieceM3").value = "";
@@ -3440,7 +3451,6 @@ updatePanelLibrarySaveButton();
 }
 function fillPanelFromLibrary() {
         if (currentEntryMode !== "panels") return;
-            renderPanelCodeSuggestions();
     const field = document.getElementById("panelPieceM3");
     const hint = document.getElementById("panelLibraryHint");
     const productCode = document.getElementById("productCode").value.trim();
@@ -3462,6 +3472,11 @@ function fillPanelFromLibrary() {
                     ? "Bibliotēkā nav atrasts. Ievadi m³ manuāli."
                     : "Ievadi produkta un paneļa kodu.";
             }
+    // Izvēlētais panelis nosaka vienas detaļas m³.
+    syncPanelVolumes("piece");
+    // Atceras bibliotēkas vērtību pēc aprēķina.
+    panelAutoValue = item ? field.value : null;
+    renderPanelCodeSuggestions();
 }
 function commitPanelLibrary(next) {
     if (!panelLibraryReady) {
@@ -3719,4 +3734,65 @@ function updatePanelLibrarySaveButton() {
             : "💾 Saglabāt detaļu bibliotēkā";
     }
     button.style.display = show ? "" : "none";
+}
+let panelVolumeSource = "piece";
+function readPanelNumber(id) {
+    return Number(
+        document.getElementById(id).value.trim().replace(",", ".")
+    );
+}
+function syncPanelVolumes(source) {
+        if (currentEntryMode !== "panels") return;
+        if (source) panelVolumeSource = source;
+    const pieceField = document.getElementById("panelPieceM3");
+    const packField = document.getElementById("panelPackM3");
+    const pieces = readPanelNumber("pieces");
+    const validPieces = Number.isInteger(pieces) && pieces > 0;
+        if (panelVolumeSource === "pack") {
+            const packM3 = readPanelNumber("panelPackM3");
+                pieceField.value = validPieces && Number.isFinite(packM3) && packM3 > 0
+                    ? String(packM3 / pieces)
+                    : "";
+        } else {
+            const pieceM3 = readPanelNumber("panelPieceM3");
+                packField.value = validPieces && Number.isFinite(pieceM3) && pieceM3 > 0
+                    ? String(pieceM3 * pieces)
+                    : "";
+        }
+    panelAutoValue = null;
+    updatePanelLibrarySaveButton();
+}
+function savePanelEntryToLibrary(entry) {
+        if (entry.mode !== "panels") return;
+    const item = cleanPanelLibraryItem({
+        productCode: entry.code,
+        panelCode: entry.panelCode,
+        pieceM3: entry.pieceM3
+        });
+    // Bez abiem kodiem inventarizācijas ieraksts paliek saglabāts,
+    // bet bibliotēku papildināt nevar.
+        if (!item) return;
+    const key = panelLibraryPair(item.productCode, item.panelCode);
+    const old = panelLibrary.find(saved =>
+        panelLibraryPair(saved.productCode, saved.panelCode) === key
+        );
+    const sameVolume = old && Math.abs(old.pieceM3 - item.pieceM3) <=
+            1e-12 * Math.max(1, old.pieceM3, item.pieceM3);
+        if (sameVolume) return;
+        if (old && !confirm(
+            `Ieraksts saglabāts. Vai bibliotēkā mainīt paneļa ` +
+            `${item.productCode} / ${item.panelCode} m³ ` +
+            `no ${old.pieceM3} uz ${item.pieceM3}?`
+            )) {
+        return;
+        }
+    const next = panelLibrary.filter(saved =>
+        panelLibraryPair(saved.productCode, saved.panelCode) !== key);
+            next.push(item);
+        if (commitPanelLibrary(next)) {
+            showNotice(
+                "✅ Ieraksts saglabāts un paneļu bibliotēka papildināta.",
+                "success"
+            );
+        }
 }
