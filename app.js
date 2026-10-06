@@ -2681,8 +2681,17 @@ if (!saveWorkingState()) {
     previousArea = null;
     photoTargetArea = null;
     renderAreaPhotoPanel(null);
-    // Pārbauda un sinhronizē no backup atjaunotos ierakstus
-    syncPendingEntries();
+   // Vispirms iegūst SQL userId, tikai pēc tam sinhronizē ierakstus
+    const userName = localStorage.getItem("userName");
+            syncUserId(userName).then(userId => {
+        if (!userId) {
+            console.log(
+                "SQL userId nav iegūts. Ieraksti paliek nesinhronizēti."
+            );
+            return;
+            }
+        syncPendingEntries();
+    });
 }
 function discardBackup() {
   localStorage.removeItem("backupData");
