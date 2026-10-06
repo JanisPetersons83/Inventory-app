@@ -1134,13 +1134,15 @@ async function syncPendingEntries() {
             userName: localStorage.getItem("userName"),
             location: localStorage.getItem("location")
         });
-        if (!success) {
+        if (!success || !["saved", "duplicate"].includes(success.status)
+            ) {
             console.log(
                 "Sinhronizācija neizdevās:",
-                entry.clientRecordId
+            entry.clientRecordId,
+            success
             );
             continue;
-        }
+            }
         const savedEntry = data.find(e =>
             e.clientRecordId === entry.clientRecordId
         );
@@ -1603,16 +1605,20 @@ function add() {
   } else {
     data.push(entry);
     dataChanged = true;
+    const queued = addToSyncQueue(entry);
+    if (!queued) {
+        console.warn(
+            "Ieraksts saglabāts lokāli, bet nav pievienots syncQueue:",
+            entry.clientRecordId
+        );
+    }
     showNotice(
-      "✅ Ieraksts pievienots",
-      "success"
+        "✅ Ieraksts pievienots",
+        "success"
     );
-  }
+}
   //✅ Saglabāšana
-  localStorage.setItem(
-    "data",
-    JSON.stringify(data)
-  );
+  localStorage.setItem("data", JSON.stringify(data));
     savePanelEntryToLibrary(entry);
     saveBackup();
     // 🧪 TESTS — nosūta ierakstu serverim
@@ -2610,6 +2616,46 @@ function saveBackup() {
                 ? "❌ Nepietiek vietas rezerves kopijas saglabāšanai."
                 : "❌ Neizdevās saglabāt rezerves kopiju.", "error"
                 );
+        return false;
+    }
+}
+function addToSyncQueue(entry) {
+    const userName = localStorage.getItem("userName");
+    const location = localStorage.getItem("location");
+        if (!entry.clientRecordId || !userName || !location) {
+            console.error("Trūkst datu sinhronizācijas rindai");
+            return false;
+            }
+        try {
+            const queue = JSON.parse(
+                localStorage.getItem("syncQueue") || "[]"
+                );
+                if (!Array.isArray(queue)) {
+                    throw new Error("Nederīga syncQueue struktūra");
+                    }
+            const syncEntry = {...entry, userName, location};
+            const index = queue.findIndex(item =>
+                    item.clientRecordId === entry.clientRecordId
+                    );
+                if (index !== -1) {
+                    queue[index] = syncEntry;
+                    } else {
+                        queue.push(syncEntry);
+                    }
+                localStorage.setItem(
+                    "syncQueue",
+                    JSON.stringify(queue)
+                    );
+                console.log(
+                    "Ieraksts pievienots sinhronizācijas rindai:",
+                    entry.clientRecordId
+                    );
+                    return true;
+                    } catch (error) {
+                console.error(
+                    "Neizdevās saglabāt sinhronizācijas rindu:",
+                    error
+                    );
         return false;
     }
 }
