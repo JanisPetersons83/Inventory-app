@@ -1040,7 +1040,7 @@ function setHeaderInfo() {
         document.getElementById("infoLine").innerText =
             `${location} | ${name}${testText} | ${date}`;
 }
-async function syncUserId(userName) {
+async function syncUserId(userName, saveToStorage = true) {
     try {
         const response = await fetch(
             `${API_BASE_URL}/api/find-user`,
@@ -1062,20 +1062,20 @@ async function syncUserId(userName) {
             return null;
         }
         const result = await response.json();
-        if (
-            result.status === "ok" &&
-            result.userId &&
-            localStorage.getItem("userName") === userName
-            ) {
-            localStorage.setItem(
-                "userId",
-                String(result.userId)
-                );
+        if (result.status === "ok" && result.userId) {
+        if (saveToStorage) {
+            if (localStorage.getItem("userName") !== userName) {
+                return null;
+                }
+                localStorage.setItem(
+                    "userId",
+                    String(result.userId)
+                    );
+            }
             console.log(
-                "SQL userId saglabāts:",
-                result.userId
-            );
-            return result.userId;
+                "SQL userId iegūts:", result.userId, userName
+                );
+                return result.userId;
         }
         return null;
     } catch (error) {
@@ -1134,7 +1134,7 @@ async function syncPendingEntries() {
             userName: localStorage.getItem("userName"),
             location: localStorage.getItem("location")
         });
-        if (!success || !["saved", "duplicate"].includes(success.status)
+        if (!success
             ) {
             console.log(
                 "Sinhronizācija neizdevās:",
@@ -1149,6 +1149,7 @@ async function syncPendingEntries() {
         if (savedEntry) {
             savedEntry.synced = true;
         }
+        removeFromSyncQueue(entry.clientRecordId);
     }
     localStorage.setItem(
         "data",
@@ -1190,7 +1191,24 @@ function saveUser() {
         "userName",
         name
     );
-    syncUserId(name);
+    syncUserId(name).then(userId => {
+    if (!userId) {
+        console.log(
+            "SQL lietotājs nav iegūts. Ieraksti paliek syncQueue."
+        );
+        return;
+    }
+    console.log(
+        "SQL lietotājs gatavs sinhronizācijai:",
+        userId
+    );
+    syncQueueToServer().catch(error => {
+        console.error(
+            "Automātiskās sinhronizācijas kļūda:",
+            error
+            );
+        });
+    });
     saveRecentUser(cleanName);
     document.getElementById("locationSelect")
         .style.display = "none";
@@ -2687,6 +2705,159 @@ function removeFromSyncQueue(clientRecordId) {
         return false;
     }
 }
+let syncQueueRunning = false;
+
+async function syncQueueToServer() {
+    if (syncQueueRunning) {
+        console.log("Sinhronizācija jau notiek.");
+        return;
+    }
+
+    syncQueueRunning = true;
+
+    try {
+        let queue;
+
+        try {
+            queue = JSON.parse(
+                localStorage.getItem("syncQueue") || "[]"
+            );
+
+            if (!Array.isArray(queue)) {
+                throw new Error("Nederīga syncQueue struktūra");
+            }
+        } catch (error) {
+            console.error("Neizdevās nolasīt syncQueue:", error);
+            return;
+        }
+
+        if (queue.length === 0) {
+            console.log("syncQueue ir tukša.");
+            return;
+        }
+
+        console.log(`syncQueue: ${queue.length} ieraksti.`);
+
+        for (const entry of queue) {
+            if (
+                !entry.clientRecordId ||
+                !entry.userName ||
+                !entry.location
+            ) {
+                console.warn(
+                    "Nepilnīgs syncQueue ieraksts:",
+                    entry
+                );
+                continue;
+            }
+
+            // Sākotnējā lietotāja SQL ID
+            const userId = await syncUserId(
+                entry.userName,
+                false
+            );
+
+            if (!userId) {
+                console.log(
+                    "Lietotājs nav identificēts:",
+                    entry.userName
+                );
+                continue;
+            }
+
+            const success = await testSendInventory({
+                ...entry,
+                userId,
+                userName: entry.userName,
+                location: entry.location
+            });
+
+            if (!success) {
+                console.log(
+                    "Ieraksts paliek syncQueue:",
+                    entry.clientRecordId
+                );
+                continue;
+            }
+
+            // PostgreSQL apstiprināja saglabāšanu
+            const removed = removeFromSyncQueue(
+                entry.clientRecordId
+            );
+
+            if (!removed) {
+                console.warn(
+                    "Ieraksts saglabāts SQL, bet palika syncQueue:",
+                    entry.clientRecordId
+                );
+                continue;
+            }
+
+            // Atjaunina pašreizējos darba datus
+            const savedEntry = data.find(item =>
+                item.clientRecordId === entry.clientRecordId
+            );
+
+            if (savedEntry) {
+                savedEntry.synced = true;
+
+                localStorage.setItem(
+                    "data",
+                    JSON.stringify(data)
+                    );
+
+                console.log(
+                    "Ieraksta sinhronizācijas statuss atjaunināts:",
+                    entry.clientRecordId
+                    );
+                }
+
+            console.log(
+                "syncQueue ieraksts veiksmīgi nosūtīts:",
+                entry.clientRecordId
+            );
+        }
+
+        console.log("syncQueue pārbaude pabeigta.");
+
+    } catch (error) {
+        console.error(
+            "Neparedzēta sinhronizācijas kļūda:",
+            error
+        );
+
+    } finally {
+        syncQueueRunning = false;
+
+        console.log(
+            "Sinhronizācijas bloķētājs atbrīvots."
+        );
+    }
+}
+// ✅ Sinhronizācija pēc interneta atjaunošanās
+window.addEventListener("online", () => {
+    console.log("🌐 Interneta savienojums atjaunots");
+
+    syncQueueToServer();
+});
+
+// ✅ Atkārtota pārbaude ik pēc 60 sekundēm
+setInterval(() => {
+    if (!navigator.onLine) {
+        return;
+    }
+
+    const queue = localStorage.getItem("syncQueue");
+
+    if (!queue || queue === "[]") {
+        return;
+    }
+
+    console.log("⏱️ Automātiskā syncQueue pārbaude");
+
+    syncQueueToServer();
+
+}, 60000);
 function closeRestoreModal() {
     document.getElementById("restoreModal")
         .style.display = "none";
