@@ -2659,6 +2659,34 @@ function addToSyncQueue(entry) {
         return false;
     }
 }
+function removeFromSyncQueue(clientRecordId) {
+    try {
+        const queue = JSON.parse(
+            localStorage.getItem("syncQueue") || "[]"
+        );
+        if (!Array.isArray(queue)) {
+            throw new Error("Nederīga syncQueue struktūra");
+        }
+        const remaining = queue.filter(entry =>
+            entry.clientRecordId !== clientRecordId
+        );
+        localStorage.setItem(
+            "syncQueue",
+            JSON.stringify(remaining)
+        );
+        console.log(
+            "Ieraksts izņemts no sinhronizācijas rindas:",
+            clientRecordId
+        );
+        return true;
+    } catch (error) {
+        console.error(
+            "Neizdevās atjaunināt syncQueue:",
+            error
+        );
+        return false;
+    }
+}
 function closeRestoreModal() {
     document.getElementById("restoreModal")
         .style.display = "none";
