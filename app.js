@@ -1,5 +1,5 @@
 const API_BASE_URL =
-    "https://nominations-bottom-singer-allow.trycloudflare.com";
+    "https://pages-cable-ada-brain.trycloudflare.com";
 let data = [];
 let analysisData = [];
 let analysisFiles = [];
