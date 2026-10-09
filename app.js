@@ -1100,21 +1100,32 @@ async function testSendInventory(entry) {
             }
         );
         const result = await response.json();
-            console.log(
-                "Ieraksta sinhronizācijas rezultāts:", result);
-            if (response.ok && (
+        console.log(
+            "Ieraksta sinhronizācijas rezultāts:",
+            result
+        );
+        if (
+            response.ok &&
+            (
                 result.status === "saved" ||
-                result.status === "duplicate"
-                )
-                ) {
+                result.status === "duplicate" ||
+                result.status === "updated"
+            )
+        ) {
             return true;
-            }
-            return false;
-            } catch (error) {
-                console.log(
-                    "TESTA nosūtīšana neizdevās:", error);
-                return false;
-                }
+        }
+        console.warn(
+            "Serveris neapstiprināja sinhronizāciju:",
+            result
+        );
+        return false;
+    } catch (error) {
+        console.error(
+            "Ieraksta nosūtīšana neizdevās:",
+            error
+        );
+        return false;
+    }
 }
 async function syncPendingEntries() {
     const pendingEntries = data.filter(entry =>
@@ -1572,6 +1583,10 @@ function add() {
     clientRecordId: editIndex !== null
         ? (data[editIndex].clientRecordId || crypto.randomUUID())
         : crypto.randomUUID(),
+      // Ieraksta versija: jauns = 1, labojot +1
+    clientVersion: editIndex !== null
+        ? (Number(data[editIndex].clientVersion) || 1) + 1
+        : 1,
     area: areaVal,
     packages: packagesVal,
     thickness: isMixedMode || panels ? null : thicknessVal,
@@ -1612,56 +1627,39 @@ function add() {
     data[editIndex] = entry;
     dataChanged = true;
     editIndex = null;
+
     document.getElementById("addBtn").innerText =
-      "➕ Pievienot";
+        "➕ Pievienot";
+
     document.getElementById("cancelEditBtn").style.display =
-      "none";
-    showNotice(
-      "✅ Labojums saglabāts",
-      "success"
-    );
-  } else {
+        "none";
+
+    showNotice("✅ Labojums saglabāts", "success");
+
+} else {
     data.push(entry);
     dataChanged = true;
-    const queued = addToSyncQueue(entry);
-    if (!queued) {
-        console.warn(
-            "Ieraksts saglabāts lokāli, bet nav pievienots syncQueue:",
-            entry.clientRecordId
-        );
-    }
-    showNotice(
-        "✅ Ieraksts pievienots",
-        "success"
-    );
+
+    showNotice("✅ Ieraksts pievienots", "success");
 }
-  //✅ Saglabāšana
-  localStorage.setItem("data", JSON.stringify(data));
-    savePanelEntryToLibrary(entry);
-    saveBackup();
-    // 🧪 TESTS — nosūta ierakstu serverim
-    testSendInventory({...entry,
-        userId: localStorage.getItem("userId"),
-        userName: localStorage.getItem("userName"),
-        location: localStorage.getItem("location")
-        }).then(success => {
-        if (!success) return;
-            const savedEntry = data.find(e =>
-                e.clientRecordId === entry.clientRecordId
-                );
-        if (!savedEntry) return;
-            savedEntry.synced = true;
-            localStorage.setItem(
-                "data",
-                JSON.stringify(data)
-            );
-    saveBackup();
-    console.log(
-        "Ieraksts atzīmēts kā sinhronizēts:",
+
+//✅ Saglabā lokāli pirms sinhronizācijas
+localStorage.setItem("data", JSON.stringify(data));
+//✅ Gan jauni, gan laboti ieraksti nonāk syncQueue
+const queued = addToSyncQueue(entry);
+if (!queued) {
+    console.warn(
+        "Ieraksts saglabāts lokāli, bet nav pievienots syncQueue:",
         entry.clientRecordId
     );
-});
-  //✅ Formas attīrīšana
+}
+    savePanelEntryToLibrary(entry);
+    saveBackup();
+    //✅ Nosūtīšanu veic tikai viena funkcija
+    if (queued && navigator.onLine) {
+    syncQueueToServer();
+}
+      //✅ Formas attīrīšana
   clearError();
   render();
   clearForm();
