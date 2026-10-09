@@ -1104,15 +1104,24 @@ async function testSendInventory(entry) {
             "Ieraksta sinhronizācijas rezultāts:",
             result
         );
+        // Jauns ieraksts vai veiksmīgs labojums
         if (
             response.ok &&
             (
                 result.status === "saved" ||
-                result.status === "duplicate" ||
                 result.status === "updated"
             )
         ) {
             return true;
+        }
+        // Atkārtots vai novecojis ieraksts
+        if (result.status === "duplicate") {
+            console.warn(
+                "Ieraksta versija jāpārbauda:",
+                entry.clientRecordId,
+                result
+            );
+            return false;
         }
         console.warn(
             "Serveris neapstiprināja sinhronizāciju:",
