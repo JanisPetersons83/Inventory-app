@@ -2677,7 +2677,7 @@ function addToSyncQueue(entry) {
         return false;
     }
 }
-function removeFromSyncQueue(clientRecordId) {
+function removeFromSyncQueue(clientRecordId, sentEntry) {
     try {
         const queue = JSON.parse(
             localStorage.getItem("syncQueue") || "[]"
@@ -2685,23 +2685,30 @@ function removeFromSyncQueue(clientRecordId) {
         if (!Array.isArray(queue)) {
             throw new Error("Nederīga syncQueue struktūra");
         }
-        const remaining = queue.filter(entry =>
-            entry.clientRecordId !== clientRecordId
+        const currentEntry = queue.find(
+            entry => entry.clientRecordId === clientRecordId
+        );
+        if (!currentEntry) {
+            return false;
+        }
+        // Neizdzēšam jaunāku labojumu
+        if (JSON.stringify(currentEntry) !== JSON.stringify(sentEntry)) {
+            console.log(
+                "Ieraksts mainīts nosūtīšanas laikā. Paliek rindā:",
+                clientRecordId
+            );
+            return false;
+        }
+        const remaining = queue.filter(
+            entry => entry.clientRecordId !== clientRecordId
         );
         localStorage.setItem(
             "syncQueue",
             JSON.stringify(remaining)
         );
-        console.log(
-            "Ieraksts izņemts no sinhronizācijas rindas:",
-            clientRecordId
-        );
         return true;
     } catch (error) {
-        console.error(
-            "Neizdevās atjaunināt syncQueue:",
-            error
-        );
+        console.error("syncQueue kļūda:", error);
         return false;
     }
 }
@@ -2782,9 +2789,9 @@ async function syncQueueToServer() {
 
             // PostgreSQL apstiprināja saglabāšanu
             const removed = removeFromSyncQueue(
-                entry.clientRecordId
-            );
-
+                entry.clientRecordId,
+                entry
+                );
             if (!removed) {
                 console.warn(
                     "Ieraksts saglabāts SQL, bet palika syncQueue:",
