@@ -2947,6 +2947,131 @@ setInterval(() => {
     syncQueueToServer();
 
 }, 60000);
+let deleteQueueRunning = false;
+
+// ✅ Dzēsto ierakstu sinhronizācija
+async function syncDeleteQueueToServer() {
+
+    if (deleteQueueRunning) {
+        console.log("Dzēšanas sinhronizācija jau notiek.");
+        return;
+    }
+
+    deleteQueueRunning = true;
+
+    try {
+        const queue = JSON.parse(
+            localStorage.getItem("deleteQueue") || "[]"
+        );
+
+        if (!Array.isArray(queue)) {
+            throw new Error("Nederīga deleteQueue struktūra");
+        }
+
+        for (const entry of queue) {
+
+            if (!entry.clientRecordId || !entry.userName) {
+                console.warn("Nepilnīgs dzēšanas ieraksts:", entry);
+                continue;
+            }
+
+            // Nepieļauj dzēšanu, kamēr tas pats
+            // ieraksts vēl gaida saglabāšanu
+            const syncQueue = JSON.parse(
+                localStorage.getItem("syncQueue") || "[]"
+            );
+
+            if (syncQueue.some(item =>
+                item.clientRecordId === entry.clientRecordId
+            )) {
+                console.log(
+                    "Dzēšana gaida ieraksta sinhronizāciju:",
+                    entry.clientRecordId
+                );
+                continue;
+            }
+
+            const userId = await syncUserId(
+                entry.userName,
+                false
+            );
+
+            if (!userId) {
+                console.warn(
+                    "Dzēšanai nav iegūts userId:",
+                    entry.clientRecordId
+                );
+                continue;
+            }
+
+            const response = await fetch(
+                `${API_BASE_URL}/api/inventory`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        clientRecordId: entry.clientRecordId,
+                        clientVersion: entry.clientVersion,
+                        userId: userId,
+                        isDeleted: true
+                    })
+                }
+            );
+
+            const result = await response.json();
+
+            console.log("SQL dzēšanas rezultāts:", result);
+
+            if (
+                response.ok &&
+                (
+                    result.status === "deleted" ||
+                    result.status === "already_deleted"
+                )
+            ) {
+                // Izņem tikai to pieprasījumu,
+                // kurš tikko apstiprināts serverī
+                const currentQueue = JSON.parse(
+                    localStorage.getItem("deleteQueue") || "[]"
+                );
+
+                const updatedQueue = currentQueue.filter(item =>
+                    !(
+                        item.clientRecordId === entry.clientRecordId &&
+                        item.clientVersion === entry.clientVersion
+                    )
+                );
+
+                localStorage.setItem(
+                    "deleteQueue",
+                    JSON.stringify(updatedQueue)
+                );
+
+                console.log(
+                    "Dzēšana apstiprināta PostgreSQL:",
+                    entry.clientRecordId
+                );
+
+            } else {
+                console.warn(
+                    "Dzēšanas pieprasījums paliek rindā:",
+                    result
+                );
+            }
+        }
+
+    } catch (error) {
+        console.error(
+            "Dzēšanas sinhronizācijas kļūda:",
+            error
+        );
+
+    } finally {
+        deleteQueueRunning = false;
+    }
+}
 function closeRestoreModal() {
     document.getElementById("restoreModal")
         .style.display = "none";
