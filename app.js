@@ -2928,7 +2928,7 @@ async function syncQueueToServer() {
     }
 }
 // ✅ Sinhronizācija pēc interneta atjaunošanās
-window.addEventListener("online", () => {
+window.addEventListener("online", async () => {
     console.log("🌐 Interneta savienojums atjaunots");
         // Vispirms saglabāšanas rinda
     await syncQueueToServer();
