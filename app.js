@@ -1,5 +1,5 @@
 const API_BASE_URL =
-    "https://controversial-sample-orlando-buyer.trycloudflare.com";
+    "https://independent-romance-soldiers-abs.trycloudflare.com";
 let data = [];
 let analysisData = [];
 let analysisFiles = [];
