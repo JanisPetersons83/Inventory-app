@@ -1734,17 +1734,35 @@ function render() {
 }
     // ✅ Delete
 function remove(i) {
-        if (!confirm("Vai tiešām dzēst ierakstu?")) {
-            return;
-            }
-        //✅ Saglabā dzēšamā ieraksta informāciju
+    if (!confirm("Vai tiešām dzēst ierakstu?")) {
+        return;
+    }
+    //✅ Saglabā dzēšamā ieraksta informāciju
     const deletedEntry = { ...data[i] };
-        console.log("Dzēšanai sagatavots ieraksts:", deletedEntry);
-            data.splice(i, 1);
-            dataChanged = true;
-            localStorage.setItem("data", JSON.stringify(data));
-        saveBackup();
+    //✅ Ja ierakstam ir UUID, saglabā dzēšanas pieprasījumu
+    if (deletedEntry.clientRecordId) {
+        const added = addToDeleteQueue(deletedEntry);
+        if (!added) {
+            showNotice(
+                "❌ Neizdevās saglabāt dzēšanas pieprasījumu.",
+                "error"
+            );
+            return;
+        }
+    }
+    //✅ Izņem ierakstu no lokālajiem datiem
+    data.splice(i, 1);
+    dataChanged = true;
+    localStorage.setItem(
+        "data",
+        JSON.stringify(data)
+    );
+    saveBackup();
     render();
+    console.log(
+        "Ieraksts izdzēsts lokāli:",
+        deletedEntry.clientRecordId
+    );
 }
 // ✅ Edit
 function edit(i) {
