@@ -1734,9 +1734,12 @@ function render() {
 }
     // ✅ Delete
 function remove(i) {
-    if (!confirm("Vai tiešām dzēst ierakstu?")) {
-        return;
-        }
+        if (!confirm("Vai tiešām dzēst ierakstu?")) {
+            return;
+            }
+        //✅ Saglabā dzēšamā ieraksta informāciju
+    const deletedEntry = { ...data[i] };
+        console.log("Dzēšanai sagatavots ieraksts:", deletedEntry);
             data.splice(i, 1);
             dataChanged = true;
             localStorage.setItem("data", JSON.stringify(data));
@@ -2681,6 +2684,60 @@ function addToSyncQueue(entry) {
                     "Neizdevās saglabāt sinhronizācijas rindu:",
                     error
                     );
+        return false;
+    }
+}
+// ✅ Pievieno ierakstu dzēšanas rindai
+function addToDeleteQueue(entry) {
+    try {
+        if (!entry.clientRecordId) {
+            console.warn(
+                "Dzēšanai trūkst clientRecordId"
+            );
+            return false;
+        }
+        const queue = JSON.parse(
+            localStorage.getItem("deleteQueue") || "[]"
+        );
+        if (!Array.isArray(queue)) {
+            throw new Error("Nederīga deleteQueue struktūra");
+        }
+        const deleteEntry = {
+            clientRecordId: entry.clientRecordId,
+            clientVersion:
+                (Number(entry.clientVersion) || 1) + 1,
+            userName: entry.userName ||
+                localStorage.getItem("userName"),
+            isDeleted: true
+        };
+        if (!deleteEntry.userName) {
+            console.warn(
+                "Dzēšanai trūkst lietotāja vārda"
+            );
+            return false;
+        }
+        const index = queue.findIndex(item =>
+            item.clientRecordId === entry.clientRecordId
+        );
+        if (index !== -1) {
+            // Saglabā jau izveidoto dzēšanas versiju
+            return true;
+        }
+        queue.push(deleteEntry);
+        localStorage.setItem(
+            "deleteQueue",
+            JSON.stringify(queue)
+        );
+        console.log(
+            "Ieraksts pievienots deleteQueue:",
+            deleteEntry.clientRecordId
+        );
+        return true;
+    } catch (error) {
+        console.error(
+            "Neizdevās pievienot deleteQueue:",
+            error
+        );
         return false;
     }
 }
