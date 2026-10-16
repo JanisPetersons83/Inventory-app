@@ -2914,39 +2914,54 @@ async function syncQueueToServer() {
             "Neparedzēta sinhronizācijas kļūda:",
             error
         );
-
     } finally {
         syncQueueRunning = false;
-
-        console.log(
-            "Sinhronizācijas bloķētājs atbrīvots."
-        );
+            console.log(
+                "Sinhronizācijas bloķētājs atbrīvots."
+                );
+        // Pēc saglabāšanas pārbauda arī dzēšanas rindu
+    const deleteQueue = localStorage.getItem("deleteQueue");
+        if (deleteQueue && deleteQueue !== "[]") {
+                console.log("Pārbauda deleteQueue pēc saglabāšanas.");
+            await syncDeleteQueueToServer();
+            }
     }
 }
 // ✅ Sinhronizācija pēc interneta atjaunošanās
 window.addEventListener("online", () => {
     console.log("🌐 Interneta savienojums atjaunots");
+        // Vispirms saglabāšanas rinda
+    await syncQueueToServer();
 
-    syncQueueToServer();
+        // Pēc tam dzēšanas rinda
+    await syncDeleteQueueToServer();
 });
 
 // ✅ Atkārtota pārbaude ik pēc 60 sekundēm
-setInterval(() => {
+// ✅ Automātiska abu rindu pārbaude ik pēc 60 sekundēm
+setInterval(async () => {
+
     if (!navigator.onLine) {
         return;
     }
 
-    const queue = localStorage.getItem("syncQueue");
-
-    if (!queue || queue === "[]") {
-        return;
-    }
-
-    console.log("⏱️ Automātiskā syncQueue pārbaude");
-
-    syncQueueToServer();
-
-}, 60000);
+    const syncQueue = localStorage.getItem("syncQueue");
+    const deleteQueue = localStorage.getItem("deleteQueue");
+    const hasSyncEntries = syncQueue && syncQueue !== "[]";
+    const hasDeleteEntries = deleteQueue && deleteQueue !== "[]";
+        if (!hasSyncEntries && !hasDeleteEntries) {
+            return;
+            }
+        console.log("⏱️ Automātiskā sinhronizācijas pārbaude");
+        // Vispirms jaunie un labotie ieraksti
+        if (hasSyncEntries) {
+            await syncQueueToServer();
+            }
+        // Pēc tam dzēstie ieraksti
+        if (hasDeleteEntries) {
+            await syncDeleteQueueToServer();
+            }
+    }, 60000);
 let deleteQueueRunning = false;
 
 // ✅ Dzēsto ierakstu sinhronizācija
@@ -2956,7 +2971,12 @@ async function syncDeleteQueueToServer() {
         console.log("Dzēšanas sinhronizācija jau notiek.");
         return;
     }
-
+    if (syncQueueRunning) {
+        console.log(
+            "Dzēšana gaida saglabāšanas sinhronizācijas pabeigšanu."
+        );
+        return;
+    }
     deleteQueueRunning = true;
 
     try {
