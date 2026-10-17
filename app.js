@@ -1779,6 +1779,8 @@ function remove(i) {
         "data",
         JSON.stringify(data)
     );
+    // ✅ Dzēšana ir darbinieka aktivitāte
+    updateLastActivity();
     saveBackup();
     render();
     console.log(
@@ -2706,10 +2708,27 @@ function addToSyncQueue(entry) {
                     item.clientRecordId === entry.clientRecordId
                     );
                 if (index !== -1) {
-                    queue[index] = syncEntry;
-                    } else {
-                        queue.push(syncEntry);
-                    }
+                    const existingVersion = Number(
+                        queue[index].clientVersion
+                        ) || 1;
+                    const newVersion = Number(
+                        syncEntry.clientVersion
+                        ) || 1;
+                    // ✅ Vecāka versija nedrīkst aizstāt jaunāku
+                        if (newVersion < existingVersion) {
+                            console.warn(
+                                "Vecāka ieraksta versija netika pieņemta:",
+                                entry.clientRecordId,
+                                "Esošā:", existingVersion,
+                                "Jaunā:", newVersion
+                                );
+                        return false;
+                        }
+                    // ✅ Jaunāka vai vienāda versija
+                        queue[index] = syncEntry;
+                        } else {
+                            queue.push(syncEntry);
+                            }
                 localStorage.setItem(
                     "syncQueue",
                     JSON.stringify(queue)
@@ -2773,11 +2792,18 @@ function addToDeleteQueue(entry) {
             // Saglabā jau izveidoto dzēšanas versiju
             return true;
         }
-        queue.push(deleteEntry);
+       queue.push(deleteEntry);
+            localStorage.setItem(
+                "deleteQueue",
+                JSON.stringify(queue)
+                );
+    // ✅ Reģistrē pirmā nenosūtītā pieprasījuma laiku
+    if (!localStorage.getItem("syncInterruptedAt")) {
         localStorage.setItem(
-            "deleteQueue",
-            JSON.stringify(queue)
-        );
+            "syncInterruptedAt",
+            String(Date.now())
+            );
+        }
         console.log(
             "Ieraksts pievienots deleteQueue:",
             deleteEntry.clientRecordId
@@ -2860,46 +2886,69 @@ function requiresSyncApproval() {
 // ✅ Vai automātiskā sinhronizācija jāaptur?
 // ✅ Pārbauda, vai sinhronizācijai vajag apstiprinājumu
 function isSyncApprovalPending() {
-    let queue;
+
+    let syncQueue;
+    let deleteQueue;
+
     try {
-        queue = JSON.parse(
+        syncQueue = JSON.parse(
             localStorage.getItem("syncQueue") || "[]"
         );
 
-        if (!Array.isArray(queue)) {
+        deleteQueue = JSON.parse(
+            localStorage.getItem("deleteQueue") || "[]"
+        );
+
+        if (
+            !Array.isArray(syncQueue) ||
+            !Array.isArray(deleteQueue)
+        ) {
+            console.error("Nederīga sinhronizācijas rindu struktūra.");
             return true;
         }
+
     } catch (error) {
         console.error(
-            "Neizdevās pārbaudīt syncQueue:",
+            "Sinhronizācijas rindu nolasīšanas kļūda:",
             error
         );
         return true;
     }
-    // ✅Ja nav gaidošu ierakstu, nav ko apstiprināt
-    if (queue.length === 0) {
+
+    // ✅ Pārbaudām abas rindas
+    const hasPendingEntries =
+        syncQueue.length > 0 ||
+        deleteQueue.length > 0;
+
+    if (!hasPendingEntries) {
         return false;
     }
-    // ✅ Darbinieks jau atļāvis šīs rindas sinhronizāciju
+
+    // ✅ Darbinieks jau ir apstiprinājis sinhronizāciju
     if (
         localStorage.getItem("syncApprovalGranted") === "true"
-        ) {
+    ) {
         return false;
-        }
-    // ✅Iepriekš konstatēts ilgstošs pārtraukums
+    }
+
+    // ✅ Iepriekš konstatēta nepieciešamība apstiprināt
     if (
         localStorage.getItem("syncApprovalRequired") === "true"
     ) {
         return true;
     }
-    // ✅Pārbauda pārtraukuma un neaktivitātes ilgumu
+
+    // ✅ Pārbaudām 60 minūšu noteikumu
     if (requiresSyncApproval()) {
+
         localStorage.setItem(
             "syncApprovalRequired",
             "true"
         );
+
         return true;
     }
+
     return false;
 }
 // ✅ Atver sinhronizācijas apstiprinājuma logu
@@ -3010,6 +3059,23 @@ async function syncQueueToServer() {
         }
         console.log(`syncQueue: ${queue.length} ieraksti.`);
         for (const entry of queue) {
+            // ✅ Pārbauda, vai ierakstam nav gaidoša dzēšana
+            const deleteQueue = JSON.parse(
+                localStorage.getItem("deleteQueue") || "[]"
+                );
+                if (!Array.isArray(deleteQueue)) {
+                    throw new Error("Nederīga deleteQueue struktūra");
+                    }
+            const pendingDelete = deleteQueue.some(item =>
+                item.clientRecordId === entry.clientRecordId
+                );
+                if (pendingDelete) {
+                    console.warn(
+                        "⛔ Saglabāšana izlaista — ieraksts gaida dzēšanu:",
+                        entry.clientRecordId
+                        );
+                continue;
+                }
         // Pārbauda, vai ieraksts joprojām atrodas rindā
     const currentQueue = JSON.parse(
         localStorage.getItem("syncQueue") || "[]"
@@ -3125,13 +3191,19 @@ async function syncQueueToServer() {
         // ✅ Atiestata taimeri tikai tad,
         // ja visi ieraksti ir nosūtīti
         try {
-    const remainingQueue = JSON.parse(
-        localStorage.getItem("syncQueue") || "[]"
-    );
-        if (
-            Array.isArray(remainingQueue) &&
-            remainingQueue.length === 0
-            ) {
+        const remainingQueue = JSON.parse(
+            localStorage.getItem("syncQueue") || "[]"
+            );
+        const remainingDeleteQueue = JSON.parse(
+            localStorage.getItem("deleteQueue") || "[]"
+            );
+        // ✅ Atiestata tikai tad, ja ABAS rindas ir tukšas
+            if (
+                Array.isArray(remainingQueue) &&
+                Array.isArray(remainingDeleteQueue) &&
+                remainingQueue.length === 0 &&
+                remainingDeleteQueue.length === 0
+                ) {
         // ✅ Sinhronizācijas pārtraukums beidzies
             localStorage.removeItem("syncInterruptedAt");
         // ✅ Vecā apstiprinājuma prasība vairs nav spēkā
@@ -3215,9 +3287,20 @@ async function syncDeleteQueueToServer() {
 
         if (!Array.isArray(queue)) {
             throw new Error("Nederīga deleteQueue struktūra");
+            }
+        // ✅ Ja nav dzēšanas pieprasījumu, beidz darbu
+        if (queue.length === 0) {
+            return;
+            }
+        // ✅ Drošības pārbaude pirms dzēšanas nosūtīšanas
+        if (isSyncApprovalPending()) {
+            console.warn(
+                "⛔ Dzēšanas sinhronizācija apturēta. " +
+                "Nepieciešams darbinieka apstiprinājums."
+                );
+            return;
         }
-
-        for (const entry of queue) {
+    for (const entry of queue) {
 
             if (!entry.clientRecordId || !entry.userName) {
                 console.warn("Nepilnīgs dzēšanas ieraksts:", entry);
