@@ -1136,10 +1136,12 @@ async function testSendInventory(entry) {
         return false;
     }
 }
+// ✅ Atjauno nesinhronizēto ierakstu rindu
+// un izmanto vienoto sinhronizācijas mehānismu
 async function syncPendingEntries() {
     const pendingEntries = data.filter(entry =>
         entry.synced !== true
-        );
+    );
     if (pendingEntries.length === 0) {
         console.log("Nav nesinhronizētu ierakstu.");
         return;
@@ -1148,37 +1150,18 @@ async function syncPendingEntries() {
         `Atrasti ${pendingEntries.length} nesinhronizēti ieraksti.`
     );
     for (const entry of pendingEntries) {
-        const success = await testSendInventory({
-            ...entry,
-            userId: localStorage.getItem("userId"),
-            userName: localStorage.getItem("userName"),
-            location: localStorage.getItem("location")
-        });
-        if (!success
-            ) {
-            console.log(
-                "Sinhronizācija neizdevās:",
-            entry.clientRecordId,
-            success
+        const queued = addToSyncQueue(entry);
+        if (!queued) {
+            console.warn(
+                "Neizdevās pievienot syncQueue:",
+                entry.clientRecordId
             );
-            continue;
-            }
-        const savedEntry = data.find(e =>
-            e.clientRecordId === entry.clientRecordId
-        );
-        if (savedEntry) {
-            savedEntry.synced = true;
         }
-        removeFromSyncQueue(entry.clientRecordId);
     }
-    localStorage.setItem(
-        "data",
-        JSON.stringify(data)
-    );
-    saveBackup();
-    console.log(
-        "Nesinhronizēto ierakstu pārbaude pabeigta."
-    );
+    // ✅ Vienīgais saglabāšanas sinhronizācijas ceļš
+    if (navigator.onLine) {
+        await syncQueueToServer();
+    }
 }
 function saveUser() {
     const input = document.getElementById("userNameInput");
@@ -2893,17 +2876,23 @@ function isSyncApprovalPending() {
         );
         return true;
     }
-    // Ja nav gaidošu ierakstu, nav ko apstiprināt
+    // ✅Ja nav gaidošu ierakstu, nav ko apstiprināt
     if (queue.length === 0) {
         return false;
     }
-    // Iepriekš konstatēts ilgstošs pārtraukums
+    // ✅ Darbinieks jau atļāvis šīs rindas sinhronizāciju
+    if (
+        localStorage.getItem("syncApprovalGranted") === "true"
+        ) {
+        return false;
+        }
+    // ✅Iepriekš konstatēts ilgstošs pārtraukums
     if (
         localStorage.getItem("syncApprovalRequired") === "true"
     ) {
         return true;
     }
-    // Pārbauda pārtraukuma un neaktivitātes ilgumu
+    // ✅Pārbauda pārtraukuma un neaktivitātes ilgumu
     if (requiresSyncApproval()) {
         localStorage.setItem(
             "syncApprovalRequired",
@@ -2913,6 +2902,70 @@ function isSyncApprovalPending() {
     }
     return false;
 }
+// ✅ Atver sinhronizācijas apstiprinājuma logu
+function showSyncApprovalModal() {
+    const modal = document.getElementById(
+        "syncApprovalModal"
+    );
+
+    if (!modal) return;
+
+    // Neatver atkārtoti, ja logs jau redzams
+    if (modal.style.display === "flex") return;
+
+    modal.style.display = "flex";
+}
+
+// ✅ Aizver apstiprinājuma logu
+function hideSyncApprovalModal() {
+    const modal = document.getElementById(
+        "syncApprovalModal"
+    );
+
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+// ✅ Darbinieks atļauj sinhronizāciju
+document.getElementById("approveSyncBtn")
+    .addEventListener("click", () => {
+
+        localStorage.setItem(
+            "syncApprovalGranted",
+            "true"
+        );
+        // ✅ Noņem iepriekšējā atteikuma atzīmi
+        localStorage.removeItem(
+            "syncApprovalDismissed"
+            );
+        hideSyncApprovalModal();
+
+        console.log(
+            "Darbinieks atļāva sinhronizāciju."
+        );
+    });
+
+// ✅ Darbinieks neatļauj sinhronizāciju
+document.getElementById("rejectSyncBtn")
+    .addEventListener("click", () => {
+        localStorage.setItem(
+            "syncApprovalRequired",
+            "true"
+        );
+        localStorage.removeItem(
+            "syncApprovalGranted"
+        );
+        localStorage.setItem(
+            "syncApprovalDismissed",
+            "true"
+            );
+        hideSyncApprovalModal();
+
+        console.log(
+            "Darbinieks neatļāva sinhronizāciju."
+        );
+    });
 async function syncQueueToServer() {
     if (syncQueueRunning) {
         console.log("Sinhronizācija jau notiek.");
@@ -2947,8 +3000,13 @@ async function syncQueueToServer() {
                 "⛔ Automātiskā sinhronizācija apturēta. " +
                 "Nepieciešams darbinieka apstiprinājums."
                 );
-
-        return;
+        // Nerāda logu atkārtoti pēc atteikuma
+        if (
+            localStorage.getItem("syncApprovalDismissed") !== "true"
+            ) {
+            showSyncApprovalModal();
+            }
+            return;
         }
         console.log(`syncQueue: ${queue.length} ieraksti.`);
         for (const entry of queue) {
@@ -3070,18 +3128,21 @@ async function syncQueueToServer() {
     const remainingQueue = JSON.parse(
         localStorage.getItem("syncQueue") || "[]"
     );
-
-    if (
-        Array.isArray(remainingQueue) &&
-        remainingQueue.length === 0
-    ) {
-        localStorage.removeItem("syncInterruptedAt");
-
+        if (
+            Array.isArray(remainingQueue) &&
+            remainingQueue.length === 0
+            ) {
+        // ✅ Sinhronizācijas pārtraukums beidzies
+            localStorage.removeItem("syncInterruptedAt");
+        // ✅ Vecā apstiprinājuma prasība vairs nav spēkā
+            localStorage.removeItem("syncApprovalRequired");
+        // ✅ Vecā atļauja nedrīkst attiekties uz nākamo inventarizāciju
+            localStorage.removeItem("syncApprovalGranted");
         console.log(
-            "✅ syncQueue ir tukša. Sinhronizācijas taimeris atiestatīts."
-        );
-    }
-} catch (error) {
+            "✅ syncQueue tukša. Sinhronizācijas stāvoklis atiestatīts."
+            );
+            }
+        } catch (error) {
     console.error(
         "Neizdevās pārbaudīt sinhronizācijas rindu:",
         error
@@ -3328,17 +3389,12 @@ if (!saveWorkingState()) {
     previousArea = null;
     photoTargetArea = null;
     renderAreaPhotoPanel(null);
-   // Vispirms iegūst SQL userId, tikai pēc tam sinhronizē ierakstus
-    const userName = localStorage.getItem("userName");
-            syncUserId(userName).then(userId => {
-        if (!userId) {
-            console.log(
-                "SQL userId nav iegūts. Ieraksti paliek nesinhronizēti."
+   // ✅ Backup atjaunošana ir lokāla darbība.
+    // Vecos backup ierakstus automātiski nesūta uz SQL.
+        console.log(
+            "Backup atjaunots lokāli. " +
+            "Automātiskā SQL sinhronizācija netiek sākta."
             );
-            return;
-            }
-        syncPendingEntries();
-    });
 }
 function discardBackup() {
   localStorage.removeItem("backupData");
