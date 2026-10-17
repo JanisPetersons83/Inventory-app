@@ -2822,7 +2822,36 @@ function removeFromSyncQueue(clientRecordId, sentEntry) {
     }
 }
 let syncQueueRunning = false;
+// ✅ Pārbauda, vai sinhronizācijai vajag apstiprinājumu
+function requiresSyncApproval() {
 
+    const interruptedAt = Number(
+        localStorage.getItem("syncInterruptedAt")
+    );
+
+    const lastActivityAt = Number(
+        localStorage.getItem("lastActivityAt")
+    );
+
+    const ONE_HOUR = 60 * 60 * 1000;
+    const now = Date.now();
+
+    // Ja laika informācija nav pieejama,
+    // drošības nolūkos prasa apstiprinājumu.
+    if (!interruptedAt || !lastActivityAt) {
+        return true;
+    }
+
+    const syncDelay = now - interruptedAt;
+    const inactivity = now - lastActivityAt;
+
+    // Apstiprinājums vajadzīgs tikai tad,
+    // ja abi laiki pārsniedz vienu stundu.
+    return (
+        syncDelay > ONE_HOUR &&
+        inactivity > ONE_HOUR
+    );
+}
 async function syncQueueToServer() {
     if (syncQueueRunning) {
         console.log("Sinhronizācija jau notiek.");
