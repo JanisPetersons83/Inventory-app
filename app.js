@@ -1206,7 +1206,12 @@ function saveUser() {
     localStorage.setItem(
         "sessionStart",
         String(Date.now())
-    );
+        );
+    // ✅ Pēdējā darbinieka aktivitāte
+    localStorage.setItem(
+        "lastActivityAt",
+        String(Date.now())
+        );
     localStorage.setItem(
         "userName",
         name
@@ -1424,6 +1429,17 @@ function getFullYear(yearValue) {
             return year;
         }
     return null;
+}
+// ✅ Reģistrē pēdējo darbinieka aktivitāti
+function updateLastActivity() {
+    if (!localStorage.getItem("sessionStart")) {
+        return;
+    }
+
+    localStorage.setItem(
+        "lastActivityAt",
+        String(Date.now())
+    );
 }
 // ✅ Pievieno ierakstu
 function add() {
@@ -1651,9 +1667,10 @@ function add() {
 
     showNotice("✅ Ieraksts pievienots", "success");
 }
-
 //✅ Saglabā lokāli pirms sinhronizācijas
 localStorage.setItem("data", JSON.stringify(data));
+// ✅ Darbinieks turpina inventarizāciju
+updateLastActivity();
 //✅ Gan jauni, gan laboti ieraksti nonāk syncQueue
 const queued = addToSyncQueue(entry);
 if (!queued) {
@@ -2692,6 +2709,16 @@ function addToSyncQueue(entry) {
                     "syncQueue",
                     JSON.stringify(queue)
                     );
+                // ✅ Fiksē pirmā nenosūtītā ieraksta laiku
+                if (!localStorage.getItem("syncInterruptedAt")) {
+                    localStorage.setItem(
+                        "syncInterruptedAt",
+                        String(Date.now())
+                        );
+                    console.log(
+                        "Sākta sinhronizācijas pārtraukuma uzskaite"
+                        );
+                    }
                 console.log(
                     "Ieraksts pievienots sinhronizācijas rindai:",
                     entry.clientRecordId
@@ -2826,8 +2853,28 @@ async function syncQueueToServer() {
         }
 
         console.log(`syncQueue: ${queue.length} ieraksti.`);
-
         for (const entry of queue) {
+        // Pārbauda, vai ieraksts joprojām atrodas rindā
+    const currentQueue = JSON.parse(
+        localStorage.getItem("syncQueue") || "[]"
+        );
+
+    const currentEntry = currentQueue.find(item =>
+        item.clientRecordId === entry.clientRecordId
+        );
+
+    // Ja ieraksts izņemts vai mainīts,
+    // nenosūta novecojušo versiju
+        if (
+            !currentEntry ||
+            JSON.stringify(currentEntry) !== JSON.stringify(entry)
+            ) {
+            console.log(
+                "Izlaists novecojis syncQueue ieraksts:",
+                entry.clientRecordId
+                );
+            continue;
+        }
             if (
                 !entry.clientRecordId ||
                 !entry.userName ||
@@ -2919,6 +2966,29 @@ async function syncQueueToServer() {
             console.log(
                 "Sinhronizācijas bloķētājs atbrīvots."
                 );
+        // ✅ Atiestata taimeri tikai tad,
+        // ja visi ieraksti ir nosūtīti
+        try {
+    const remainingQueue = JSON.parse(
+        localStorage.getItem("syncQueue") || "[]"
+    );
+
+    if (
+        Array.isArray(remainingQueue) &&
+        remainingQueue.length === 0
+    ) {
+        localStorage.removeItem("syncInterruptedAt");
+
+        console.log(
+            "✅ syncQueue ir tukša. Sinhronizācijas taimeris atiestatīts."
+        );
+    }
+} catch (error) {
+    console.error(
+        "Neizdevās pārbaudīt sinhronizācijas rindu:",
+        error
+    );
+}
         // Pēc saglabāšanas pārbauda arī dzēšanas rindu
     const deleteQueue = localStorage.getItem("deleteQueue");
         if (deleteQueue && deleteQueue !== "[]") {
