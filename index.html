@@ -575,7 +575,38 @@
             </button>
         </div>
     </div>
-    
+    <!-- ✅ Sinhronizācijas apstiprinājuma logs -->
+<div id="syncApprovalModal"
+     style="display:none;"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="syncApprovalTitle">
+    <div class="syncApprovalContent">
+        <h3 id="syncApprovalTitle">
+            ⚠️ Sinhronizācijas apstiprinājums
+        </h3>
+        <p>
+            Inventarizācijas dati nav sinhronizēti
+            ilgāk par vienu stundu.
+        </p>
+        <p>
+            Iespējams, inventarizāciju jau ir
+            turpinājis cits darbinieks.
+        </p>
+        <p>
+            Vai atļaut nenosūtīto datu
+            sinhronizāciju ar serveri?
+        </p>
+        <button type="button"
+                id="approveSyncBtn">
+            ✅ Atļaut
+        </button>
+        <button type="button"
+                id="rejectSyncBtn">
+            ❌ Neatļaut
+        </button>
+    </div>
+</div>
     <script src="libs/exceljs.min.js"></script>
     <script src="libs/FileSaver.min.js"></script>
         <script>
