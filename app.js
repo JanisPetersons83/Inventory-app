@@ -1430,10 +1430,32 @@ function getFullYear(yearValue) {
         }
     return null;
 }
-// ✅ Reģistrē pēdējo darbinieka aktivitāti
+// ✅ Reģistrē darbinieka aktivitāti
 function updateLastActivity() {
+
     if (!localStorage.getItem("sessionStart")) {
         return;
+    }
+
+    // Pārbauda iepriekšējo stāvokli,
+    // PIRMS aktivitātes laika atjaunošanas
+    if (requiresSyncApproval()) {
+
+        const queue = JSON.parse(
+            localStorage.getItem("syncQueue") || "[]"
+        );
+
+        if (Array.isArray(queue) && queue.length > 0) {
+
+            localStorage.setItem(
+                "syncApprovalRequired",
+                "true"
+            );
+
+            console.warn(
+                "Vecajiem ierakstiem nepieciešams sinhronizācijas apstiprinājums."
+            );
+        }
     }
 
     localStorage.setItem(
@@ -2852,6 +2874,45 @@ function requiresSyncApproval() {
         inactivity > ONE_HOUR
     );
 }
+// ✅ Vai automātiskā sinhronizācija jāaptur?
+// ✅ Pārbauda, vai sinhronizācijai vajag apstiprinājumu
+function isSyncApprovalPending() {
+    let queue;
+    try {
+        queue = JSON.parse(
+            localStorage.getItem("syncQueue") || "[]"
+        );
+
+        if (!Array.isArray(queue)) {
+            return true;
+        }
+    } catch (error) {
+        console.error(
+            "Neizdevās pārbaudīt syncQueue:",
+            error
+        );
+        return true;
+    }
+    // Ja nav gaidošu ierakstu, nav ko apstiprināt
+    if (queue.length === 0) {
+        return false;
+    }
+    // Iepriekš konstatēts ilgstošs pārtraukums
+    if (
+        localStorage.getItem("syncApprovalRequired") === "true"
+    ) {
+        return true;
+    }
+    // Pārbauda pārtraukuma un neaktivitātes ilgumu
+    if (requiresSyncApproval()) {
+        localStorage.setItem(
+            "syncApprovalRequired",
+            "true"
+        );
+        return true;
+    }
+    return false;
+}
 async function syncQueueToServer() {
     if (syncQueueRunning) {
         console.log("Sinhronizācija jau notiek.");
@@ -2880,7 +2941,15 @@ async function syncQueueToServer() {
             console.log("syncQueue ir tukša.");
             return;
         }
+        // ✅ Drošības pārbaude pirms nosūtīšanas
+        if (isSyncApprovalPending()) {
+            console.warn(
+                "⛔ Automātiskā sinhronizācija apturēta. " +
+                "Nepieciešams darbinieka apstiprinājums."
+                );
 
+        return;
+        }
         console.log(`syncQueue: ${queue.length} ieraksti.`);
         for (const entry of queue) {
         // Pārbauda, vai ieraksts joprojām atrodas rindā
