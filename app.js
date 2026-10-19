@@ -1114,6 +1114,22 @@ async function testSendInventory(entry) {
         ) {
             return true;
         }
+        // ⛔ PostgreSQL ieraksts jau ir dzēsts
+if (
+    response.status === 409 &&
+    result.status === "deleted_conflict"
+) {
+    console.warn(
+        "⛔ PostgreSQL noraidīja dzēstu ierakstu:",
+        entry.clientRecordId,
+        "Nosūtītā versija:",
+        entry.clientVersion,
+        "Dzēšanas versija:",
+        result.deletedVersion
+    );
+
+    return false;
+}
         // Atkārtots vai novecojis ieraksts
         if (result.status === "duplicate") {
             console.warn(
@@ -3307,20 +3323,33 @@ async function syncDeleteQueueToServer() {
                 continue;
             }
 
-            // Nepieļauj dzēšanu, kamēr tas pats
-            // ieraksts vēl gaida saglabāšanu
-            const syncQueue = JSON.parse(
-                localStorage.getItem("syncQueue") || "[]"
+            // ✅ Dzēšanas pieprasījumam ir prioritāte
+            // pār vecāku saglabāšanas pieprasījumu.
+        const syncQueue = JSON.parse(
+            localStorage.getItem("syncQueue") || "[]"
             );
-
-            if (syncQueue.some(item =>
+            if (!Array.isArray(syncQueue)) {
+                throw new Error("Nederīga syncQueue struktūra");
+                }
+        const pendingSave = syncQueue.find(item =>
                 item.clientRecordId === entry.clientRecordId
-            )) {
-                console.log(
-                    "Dzēšana gaida ieraksta sinhronizāciju:",
-                    entry.clientRecordId
                 );
-                continue;
+            if (pendingSave) {
+        const saveVersion = Number(pendingSave.clientVersion) || 1;
+        const deleteVersion = Number(entry.clientVersion) || 1;
+            // Ja saglabāšanas versija nav vecāka,
+            // automātisku dzēšanu neveic.
+            if (deleteVersion <= saveVersion) {
+                console.warn(
+                    "⛔ Dzēšana apturēta versiju konflikta dēļ:",
+                    entry.clientRecordId
+                    );
+            continue;
+            }
+            console.log(
+                "Dzēšanas pieprasījums ir jaunāks par saglabāšanu:",
+                entry.clientRecordId
+                );
             }
 
             const userId = await syncUserId(
@@ -3335,7 +3364,30 @@ async function syncDeleteQueueToServer() {
                 );
                 continue;
             }
+            // ✅ Pārbauda, vai dzēšanas pieprasījums
+            // joprojām atrodas rindā un nav mainīts
+const currentDeleteQueue = JSON.parse(
+    localStorage.getItem("deleteQueue") || "[]"
+);
 
+if (!Array.isArray(currentDeleteQueue)) {
+    throw new Error("Nederīga deleteQueue struktūra");
+}
+
+const currentDeleteEntry = currentDeleteQueue.find(item =>
+    item.clientRecordId === entry.clientRecordId
+);
+
+if (
+    !currentDeleteEntry ||
+    JSON.stringify(currentDeleteEntry) !== JSON.stringify(entry)
+) {
+    console.warn(
+        "⛔ Izlaists novecojis dzēšanas pieprasījums:",
+        entry.clientRecordId
+    );
+    continue;
+}
             const response = await fetch(
                 `${API_BASE_URL}/api/inventory`,
                 {
@@ -3380,7 +3432,36 @@ async function syncDeleteQueueToServer() {
                     "deleteQueue",
                     JSON.stringify(updatedQueue)
                 );
+                // ✅ Pēc apstiprinātas dzēšanas izņem vecāku
+                // saglabāšanas pieprasījumu no syncQueue
+                const pendingSaves = JSON.parse(
+                        localStorage.getItem("syncQueue") || "[]");
+                    if (!Array.isArray(pendingSaves)) {
+                        throw new Error("Nederīga syncQueue struktūra");
+                        }
+                const remainingSaves = pendingSaves.filter(item => {
+                    if (item.clientRecordId !== entry.clientRecordId) {
+                    return true;
+                    }
+                        const saveVersion = Number(item.clientVersion) || 1;
+                        const deleteVersion = Number(entry.clientVersion) || 1;
+                        // Ja saglabāšana ir jaunāka vai vienāda,
+                        // to automātiski neizņem.
+                        return saveVersion >= deleteVersion;
+                    });
 
+if (remainingSaves.length !== pendingSaves.length) {
+
+    localStorage.setItem(
+        "syncQueue",
+        JSON.stringify(remainingSaves)
+    );
+
+    console.log(
+        "Novecojis saglabāšanas pieprasījums izņemts:",
+        entry.clientRecordId
+    );
+}
                 console.log(
                     "Dzēšana apstiprināta PostgreSQL:",
                     entry.clientRecordId
