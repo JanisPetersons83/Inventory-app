@@ -2868,6 +2868,7 @@ function removeFromSyncQueue(clientRecordId, sentEntry) {
         return false;
     }
 }
+
 let syncQueueRunning = false;
 // ✅ Pārbauda, vai sinhronizācijai vajag apstiprinājumu
 function requiresSyncApproval() {
