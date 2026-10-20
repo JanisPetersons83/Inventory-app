@@ -1127,7 +1127,44 @@ if (
         "Dzēšanas versija:",
         result.deletedVersion
     );
+// Atzīmējam konkrēto noraidīto versiju syncQueue
+try {
+    const queue = JSON.parse(
+        localStorage.getItem("syncQueue") || "[]"
+    );
 
+    if (!Array.isArray(queue)) {
+        throw new Error("Nederīga syncQueue struktūra");
+    }
+
+    const currentEntry = queue.find(item =>
+        item.clientRecordId === entry.clientRecordId
+    );
+
+    // Atzīmējam tikai tad, ja versija nav mainījusies
+    if (
+        currentEntry &&
+        Number(currentEntry.clientVersion) ===
+        Number(entry.clientVersion)
+    ) {
+        currentEntry.syncConflict = "deleted_conflict";
+
+        localStorage.setItem(
+            "syncQueue",
+            JSON.stringify(queue)
+        );
+
+        console.warn(
+            "⛔ Ieraksta automātiskā nosūtīšana apturēta:",
+            entry.clientRecordId
+        );
+    }
+} catch (error) {
+    console.error(
+        "Neizdevās atzīmēt sinhronizācijas konfliktu:",
+        error
+    );
+}
     return false;
 }
         // Atkārtots vai novecojis ieraksts
@@ -1625,49 +1662,59 @@ function add() {
         totalM3 = m3PerPack * packagesVal;
       }
   //✅ Jaunais ieraksts
-  const entry = {
-    clientRecordId: editIndex !== null
-        ? (data[editIndex].clientRecordId || crypto.randomUUID())
-        : crypto.randomUUID(),
-      // Ieraksta versija: jauns = 1, labojot +1
-    clientVersion: editIndex !== null
-        ? (Number(data[editIndex].clientVersion) || 1) + 1
-        : 1,
-    area: areaVal,
-    packages: packagesVal,
-    thickness: isMixedMode || panels ? null : thicknessVal,
-    width: isMixedMode || panels ? null : widthVal,
-    length: rawLength,
-    month: monthVal,
-    year: yearVal,
-    packWidth: packWidth,
-    packLength: packLength,
-    packHeight: packHeight,
-        mixedFill: mixedFill,
-            mode: mode,
-                pieceM3: pieceM3,
-                panelCode: panels
-                    ? document.getElementById("panelCode").value.trim()
-                    : "",
-                palletFillFactor: pallets ? PALLET_FILL_FACTOR : null,
-    pieces: piecesPerPack,
-    avgLength: avgLength,
-    name: pallets
-        ? "Paletes"
-        : panels
-            ? "Paneļi"
-            : document.getElementById("name").value,
-    code: document.getElementById("productCode").value,
-    grade: pallets
-        ? "PAL"
-        : panels
-            ? "A"
-            : document.getElementById("grade").value,
-    comment: document.getElementById("comment").value,
-    m3Pack: m3PerPack,
-    total: totalM3,
-    synced: false
-  };
+    const now = new Date();
+    const inventoryMonth = editIndex !== null
+        ? (data[editIndex].inventoryMonth ?? now.getMonth() + 1)
+        : now.getMonth() + 1;
+    const inventoryYear = editIndex !== null
+        ? (data[editIndex].inventoryYear ?? now.getFullYear())
+        : now.getFullYear();
+    const entry = {
+        clientRecordId: editIndex !== null
+            ? (data[editIndex].clientRecordId || crypto.randomUUID())
+            : crypto.randomUUID(),
+          // Ieraksta versija: jauns = 1, labojot +1
+        clientVersion: editIndex !== null
+            ? (Number(data[editIndex].clientVersion) || 1) + 1
+            : 1,
+        // Inventarizācijas periods
+        inventoryMonth: inventoryMonth,
+        inventoryYear: inventoryYear,
+        area: areaVal,
+        packages: packagesVal,
+        thickness: isMixedMode || panels ? null : thicknessVal,
+        width: isMixedMode || panels ? null : widthVal,
+        length: rawLength,
+        month: monthVal,
+        year: yearVal,
+        packWidth: packWidth,
+        packLength: packLength,
+        packHeight: packHeight,
+            mixedFill: mixedFill,
+                mode: mode,
+                    pieceM3: pieceM3,
+                    panelCode: panels
+                        ? document.getElementById("panelCode").value.trim()
+                        : "",
+                    palletFillFactor: pallets ? PALLET_FILL_FACTOR : null,
+        pieces: piecesPerPack,
+        avgLength: avgLength,
+        name: pallets
+            ? "Paletes"
+            : panels
+                ? "Paneļi"
+                : document.getElementById("name").value,
+        code: document.getElementById("productCode").value,
+        grade: pallets
+            ? "PAL"
+            : panels
+                ? "A"
+                : document.getElementById("grade").value,
+        comment: document.getElementById("comment").value,
+        m3Pack: m3PerPack,
+        total: totalM3,
+        synced: false
+      };
   //✅ Labošana / jauns ieraksts
   if (editIndex !== null) {
     data[editIndex] = entry;
@@ -2740,6 +2787,13 @@ function addToSyncQueue(entry) {
                                 );
                         return false;
                         }
+                    // ✅ Saglabā konflikta statusu tai pašai versijai
+                        if (
+                            newVersion === existingVersion &&
+                            queue[index].syncConflict === "deleted_conflict"
+                            ) {
+                            syncEntry.syncConflict = "deleted_conflict";
+                            }
                     // ✅ Jaunāka vai vienāda versija
                         queue[index] = syncEntry;
                         } else {
@@ -3037,25 +3091,19 @@ async function syncQueueToServer() {
         console.log("Sinhronizācija jau notiek.");
         return;
     }
-
     syncQueueRunning = true;
-
     try {
         let queue;
-
         try {
             queue = JSON.parse(
                 localStorage.getItem("syncQueue") || "[]"
             );
-
             if (!Array.isArray(queue)) {
-                throw new Error("Nederīga syncQueue struktūra");
-            }
+                throw new Error("Nederīga syncQueue struktūra");}
         } catch (error) {
             console.error("Neizdevās nolasīt syncQueue:", error);
             return;
         }
-
         if (queue.length === 0) {
             console.log("syncQueue ir tukša.");
             return;
@@ -3076,6 +3124,16 @@ async function syncQueueToServer() {
         }
         console.log(`syncQueue: ${queue.length} ieraksti.`);
         for (const entry of queue) {
+            // ⛔ Atkārtoti nesūta PostgreSQL noraidītu versiju
+        if (entry.syncConflict === "deleted_conflict") {
+            console.warn(
+                "⛔ Izlaists iepriekš noraidīts ieraksts:",
+                entry.clientRecordId,
+                "Versija:",
+                entry.clientVersion
+                );
+            continue;
+            }
             // ✅ Pārbauda, vai ierakstam nav gaidoša dzēšana
             const deleteQueue = JSON.parse(
                 localStorage.getItem("deleteQueue") || "[]"
@@ -3097,11 +3155,20 @@ async function syncQueueToServer() {
     const currentQueue = JSON.parse(
         localStorage.getItem("syncQueue") || "[]"
         );
-
+        
     const currentEntry = currentQueue.find(item =>
         item.clientRecordId === entry.clientRecordId
         );
-
+        // ⛔ Pārbauda aktuālo konflikta statusu
+        if (currentEntry?.syncConflict === "deleted_conflict") {
+            console.warn(
+                "⛔ Nosūtīšana apturēta — PostgreSQL konflikts:",
+                currentEntry.clientRecordId,
+                "Versija:",
+                currentEntry.clientVersion
+                );
+            continue;
+            }
     // Ja ieraksts izņemts vai mainīts,
     // nenosūta novecojušo versiju
         if (
@@ -3173,7 +3240,10 @@ async function syncQueueToServer() {
                 item.clientRecordId === entry.clientRecordId
             );
 
-            if (savedEntry) {
+            if (
+                savedEntry &&
+                Number(savedEntry.clientVersion) === Number(entry.clientVersion)
+                ) {
                 savedEntry.synced = true;
 
                 localStorage.setItem(
@@ -3965,11 +4035,13 @@ function renderImportAreas() {
             // GRUPĒ PĒC BIEZUMA × PLATUMA
             // ==========================================
             const sizeGroups = {};
-            areaEntries.forEach(entry => {
-                const thickness = entry.thickness ?? "";
-                const width = entry.width ?? "";
-                const size = getEntryGroup(entry);
-            });
+                areaEntries.forEach(entry => {
+                    const size = getEntryGroup(entry);
+                        if (!sizeGroups[size]) {
+                            sizeGroups[size] = [];
+                            }
+                    sizeGroups[size].push(entry);
+                });
             const areaOpen = expandedArea === area;
             const entriesOpen = expandedAreaEntries === area;
             //✅  📷 APGABALA FOTO
@@ -4224,12 +4296,35 @@ function restoreSelectedAreas() {
                 photosAdded++;
                 }
         });
-    //✅ Pievieno jaunos ierakstus
-    if (newEntries.length) {
-        data.push(
-            ...newEntries
-        );
-    }
+    // ✅ Pievieno importētos ierakstus kā JAUNUS
+// aktuālās inventarizācijas ierakstus
+    let preparedEntries = [];
+if (newEntries.length) {
+
+   const now = new Date();
+
+const inventoryMonth = now.getMonth() + 1;
+const inventoryYear = now.getFullYear();
+
+preparedEntries = newEntries.map(entry => ({
+    ...entry,
+
+    // Materiāla month un year saglabājas nemainīgi
+
+    // Jauna inventarizācijas ieraksta identitāte
+    clientRecordId: crypto.randomUUID(),
+    clientVersion: 1,
+
+    // Aktuālās inventarizācijas periods
+    inventoryMonth,
+    inventoryYear,
+
+    // Vēl nav nosūtīts PostgreSQL
+    synced: false
+}));
+
+    data.push(...preparedEntries);
+}
     // Ja nebija ne ierakstu, ne foto
     if (
         !newEntries.length &&
@@ -4249,7 +4344,42 @@ function restoreSelectedAreas() {
         "error"
     );
     return;
+    }
+    // ✅ Pievieno jaunos ierakstus SQL sinhronizācijas rindai
+let queuedCount = 0;
+
+for (const entry of preparedEntries) {
+    if (addToSyncQueue(entry)) {
+        queuedCount++;
+    } else {
+        console.warn(
+            "⚠️ Ierakstu neizdevās pievienot syncQueue:",
+            entry.clientRecordId
+        );
+    }
 }
+
+console.log(
+    `Backup imports: ${queuedCount}/${preparedEntries.length} ` +
+    "ieraksti pievienoti SQL sinhronizācijas rindai."
+);// ✅ Pievieno jaunos ierakstus SQL sinhronizācijas rindai
+let queuedCount = 0;
+
+for (const entry of preparedEntries) {
+    if (addToSyncQueue(entry)) {
+        queuedCount++;
+    } else {
+        console.warn(
+            "⚠️ Ierakstu neizdevās pievienot syncQueue:",
+            entry.clientRecordId
+        );
+    }
+}
+
+console.log(
+    `Backup imports: ${queuedCount}/${preparedEntries.length} ` +
+    "ieraksti pievienoti SQL sinhronizācijas rindai."
+);
     dataChanged = true;
     //✅ Pārzīmē
     render();
