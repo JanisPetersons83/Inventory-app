@@ -4362,23 +4362,6 @@ for (const entry of preparedEntries) {
 console.log(
     `Backup imports: ${queuedCount}/${preparedEntries.length} ` +
     "ieraksti pievienoti SQL sinhronizācijas rindai."
-);// ✅ Pievieno jaunos ierakstus SQL sinhronizācijas rindai
-let queuedCount = 0;
-
-for (const entry of preparedEntries) {
-    if (addToSyncQueue(entry)) {
-        queuedCount++;
-    } else {
-        console.warn(
-            "⚠️ Ierakstu neizdevās pievienot syncQueue:",
-            entry.clientRecordId
-        );
-    }
-}
-
-console.log(
-    `Backup imports: ${queuedCount}/${preparedEntries.length} ` +
-    "ieraksti pievienoti SQL sinhronizācijas rindai."
 );
     dataChanged = true;
     //✅ Pārzīmē
