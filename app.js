@@ -1192,13 +1192,17 @@ try {
 // ✅ Atjauno nesinhronizēto ierakstu rindu
 // un izmanto vienoto sinhronizācijas mehānismu
 async function syncPendingEntries() {
+    // Atlasa tikai ierakstus, kurus drīkst sinhronizēt.
+    // Pilna backup ieraksti paredzēti tikai pārskatiem.
     const pendingEntries = data.filter(entry =>
-        entry.synced !== true
+        entry.synced !== true &&
+        entry.syncExcluded !== true &&
+        entry.syncSource !== "full_backup"
     );
-    if (pendingEntries.length === 0) {
-        console.log("Nav nesinhronizētu ierakstu.");
-        return;
-    }
+        if (pendingEntries.length === 0) {
+            console.log("Nav nesinhronizētu ierakstu.");
+            return;
+            }
     console.log(
         `Atrasti ${pendingEntries.length} nesinhronizēti ieraksti.`
     );
@@ -1680,6 +1684,13 @@ function add() {
         // Inventarizācijas periods
         inventoryMonth: inventoryMonth,
         inventoryYear: inventoryYear,
+        // Saglabā ieraksta izcelsmi arī rediģēšanas laikā
+        syncExcluded: editIndex !== null
+            ? data[editIndex].syncExcluded === true
+            : false,
+        syncSource: editIndex !== null
+            ? (data[editIndex].syncSource || "manual")
+            : "manual",
         area: areaVal,
         packages: packagesVal,
         thickness: isMixedMode || panels ? null : thicknessVal,
@@ -2713,8 +2724,29 @@ function saveBackup() {
     const totalM3 = data.reduce((sum, e) => 
             sum + (Number(e.total) || 0), 0);
     const now = new Date();
-    const inventoryMonth = now.getMonth() + 1;
-    const inventoryYear = now.getFullYear();
+    // Inventarizācijas periods tiek ņemts
+    // no saglabātajiem ierakstiem.
+    // Ja ierakstu nav, izmanto pašreizējo periodu.
+    const firstEntry = data[0];
+    const inventoryMonth = firstEntry?.inventoryMonth
+        ?? now.getMonth() + 1;
+    const inventoryYear = firstEntry?.inventoryYear
+        ?? now.getFullYear();
+    // Pārbauda, vai visiem ierakstiem ir viens periods
+    const mixedPeriods = data.some(entry =>
+        Number(entry.inventoryMonth) !== Number(inventoryMonth) ||
+        Number(entry.inventoryYear) !== Number(inventoryYear)
+    );
+    if (mixedPeriods) {
+        console.error(
+            "Backup satur dažādu inventarizācijas periodu ierakstus."
+        );
+        showNotice(
+            "❌ Backup nevar saglabāt: ierakstiem atšķiras inventarizācijas periods.",
+            "error"
+        );
+        return false;
+    }
     const backup = {timestamp: now.toISOString(),
         user: localStorage.getItem("userName") || "",
         location: localStorage.getItem("location") || "",
@@ -2753,6 +2785,18 @@ function saveBackup() {
     }
 }
 function addToSyncQueue(entry) {
+        // ⛔ Pilna backup ieraksti paredzēti tikai pārskatiem.
+        // Tos nedrīkst nosūtīt PostgreSQL.
+        if (
+            entry?.syncExcluded === true ||
+            entry?.syncSource === "full_backup"
+            ) {
+            console.log(
+                "Pilna backup ieraksts netiek pievienots syncQueue:",
+                entry?.clientRecordId
+                );
+            return false;
+            }
     const userName = localStorage.getItem("userName");
     const location = localStorage.getItem("location");
         if (!entry.clientRecordId || !userName || !location) {
@@ -2923,8 +2967,8 @@ function removeFromSyncQueue(clientRecordId, sentEntry) {
     }
 }
 
-let syncQueueRunning = false;
-// ✅ Pārbauda, vai sinhronizācijai vajag apstiprinājumu
+    let syncQueueRunning = false;
+    // ✅ Pārbauda, vai sinhronizācijai vajag apstiprinājumu
 function requiresSyncApproval() {
 
     const interruptedAt = Number(
@@ -2954,8 +2998,8 @@ function requiresSyncApproval() {
         inactivity > ONE_HOUR
     );
 }
-// ✅ Vai automātiskā sinhronizācija jāaptur?
-// ✅ Pārbauda, vai sinhronizācijai vajag apstiprinājumu
+    // ✅ Vai automātiskā sinhronizācija jāaptur?
+    // ✅ Pārbauda, vai sinhronizācijai vajag apstiprinājumu
 function isSyncApprovalPending() {
 
     let syncQueue;
@@ -3169,8 +3213,8 @@ async function syncQueueToServer() {
                 );
             continue;
             }
-    // Ja ieraksts izņemts vai mainīts,
-    // nenosūta novecojušo versiju
+            // Ja ieraksts izņemts vai mainīts,
+            // nenosūta novecojušo versiju
         if (
             !currentEntry ||
             JSON.stringify(currentEntry) !== JSON.stringify(entry)
@@ -3192,13 +3236,29 @@ async function syncQueueToServer() {
                 );
                 continue;
             }
-
+            // ⛔ Pilna backup ierakstus nesūta PostgreSQL
+            // Pārbauda gan rindas ierakstu,
+            // gan aktuālos lokālos datus.
+            const localEntry = data.find(item =>
+                item.clientRecordId === entry.clientRecordId
+            );
+            if (
+                entry.syncExcluded === true ||
+                entry.syncSource === "full_backup" ||
+                localEntry?.syncExcluded === true ||
+                localEntry?.syncSource === "full_backup"
+            ) {
+                console.warn(
+                    "⛔ Pilna backup ieraksts netiek nosūtīts PostgreSQL:",
+                    entry.clientRecordId
+                );
+                continue;
+            }
             // Sākotnējā lietotāja SQL ID
             const userId = await syncUserId(
                 entry.userName,
                 false
             );
-
             if (!userId) {
                 console.log(
                     "Lietotājs nav identificēts:",
@@ -3206,14 +3266,12 @@ async function syncQueueToServer() {
                 );
                 continue;
             }
-
             const success = await testSendInventory({
                 ...entry,
                 userId,
                 userName: entry.userName,
                 location: entry.location
             });
-
             if (!success) {
                 console.log(
                     "Ieraksts paliek syncQueue:",
@@ -3221,7 +3279,6 @@ async function syncQueueToServer() {
                 );
                 continue;
             }
-
             // PostgreSQL apstiprināja saglabāšanu
             const removed = removeFromSyncQueue(
                 entry.clientRecordId,
@@ -3234,7 +3291,6 @@ async function syncQueueToServer() {
                 );
                 continue;
             }
-
             // Atjaunina pašreizējos darba datus
             const savedEntry = data.find(item =>
                 item.clientRecordId === entry.clientRecordId
@@ -3245,26 +3301,18 @@ async function syncQueueToServer() {
                 Number(savedEntry.clientVersion) === Number(entry.clientVersion)
                 ) {
                 savedEntry.synced = true;
-
-                localStorage.setItem(
-                    "data",
-                    JSON.stringify(data)
-                    );
-
+                localStorage.setItem("data", JSON.stringify(data));
                 console.log(
                     "Ieraksta sinhronizācijas statuss atjaunināts:",
                     entry.clientRecordId
                     );
                 }
-
             console.log(
                 "syncQueue ieraksts veiksmīgi nosūtīts:",
                 entry.clientRecordId
             );
         }
-
         console.log("syncQueue pārbaude pabeigta.");
-
     } catch (error) {
         console.error(
             "Neparedzēta sinhronizācijas kļūda:",
@@ -3278,12 +3326,8 @@ async function syncQueueToServer() {
         // ✅ Atiestata taimeri tikai tad,
         // ja visi ieraksti ir nosūtīti
         try {
-        const remainingQueue = JSON.parse(
-            localStorage.getItem("syncQueue") || "[]"
-            );
-        const remainingDeleteQueue = JSON.parse(
-            localStorage.getItem("deleteQueue") || "[]"
-            );
+        const remainingQueue = JSON.parse(localStorage.getItem("syncQueue") || "[]");
+        const remainingDeleteQueue = JSON.parse(localStorage.getItem("deleteQueue") || "[]");
         // ✅ Atiestata tikai tad, ja ABAS rindas ir tukšas
             if (
                 Array.isArray(remainingQueue) &&
@@ -3320,11 +3364,9 @@ window.addEventListener("online", async () => {
     console.log("🌐 Interneta savienojums atjaunots");
         // Vispirms saglabāšanas rinda
     await syncQueueToServer();
-
         // Pēc tam dzēšanas rinda
     await syncDeleteQueueToServer();
 });
-
 // ✅ Atkārtota pārbaude ik pēc 60 sekundēm
 // ✅ Automātiska abu rindu pārbaude ik pēc 60 sekundēm
 setInterval(async () => {
@@ -3437,28 +3479,25 @@ async function syncDeleteQueueToServer() {
             }
             // ✅ Pārbauda, vai dzēšanas pieprasījums
             // joprojām atrodas rindā un nav mainīts
-const currentDeleteQueue = JSON.parse(
-    localStorage.getItem("deleteQueue") || "[]"
-);
-
-if (!Array.isArray(currentDeleteQueue)) {
-    throw new Error("Nederīga deleteQueue struktūra");
-}
-
-const currentDeleteEntry = currentDeleteQueue.find(item =>
-    item.clientRecordId === entry.clientRecordId
-);
-
-if (
-    !currentDeleteEntry ||
-    JSON.stringify(currentDeleteEntry) !== JSON.stringify(entry)
-) {
-    console.warn(
-        "⛔ Izlaists novecojis dzēšanas pieprasījums:",
-        entry.clientRecordId
-    );
-    continue;
-}
+    const currentDeleteQueue = JSON.parse(
+        localStorage.getItem("deleteQueue") || "[]"
+        );
+        if (!Array.isArray(currentDeleteQueue)) {
+            throw new Error("Nederīga deleteQueue struktūra");
+            }
+    const currentDeleteEntry = currentDeleteQueue.find(item =>
+        item.clientRecordId === entry.clientRecordId
+        );
+        if (
+            !currentDeleteEntry ||
+            JSON.stringify(currentDeleteEntry) !== JSON.stringify(entry)
+            ) {
+            console.warn(
+                "⛔ Izlaists novecojis dzēšanas pieprasījums:",
+                entry.clientRecordId
+                );
+        continue;
+        }
             const response = await fetch(
                 `${API_BASE_URL}/api/inventory`,
                 {
@@ -3520,19 +3559,16 @@ if (
                         // to automātiski neizņem.
                         return saveVersion >= deleteVersion;
                     });
-
-if (remainingSaves.length !== pendingSaves.length) {
-
-    localStorage.setItem(
-        "syncQueue",
-        JSON.stringify(remainingSaves)
-    );
-
-    console.log(
-        "Novecojis saglabāšanas pieprasījums izņemts:",
-        entry.clientRecordId
-    );
-}
+                    if (remainingSaves.length !== pendingSaves.length) {
+                        localStorage.setItem(
+                            "syncQueue",
+                            JSON.stringify(remainingSaves)
+                            );
+                        console.log(
+                            "Novecojis saglabāšanas pieprasījums izņemts:",
+                            entry.clientRecordId
+                            );
+                        }
                 console.log(
                     "Dzēšana apstiprināta PostgreSQL:",
                     entry.clientRecordId
@@ -3582,6 +3618,21 @@ function restoreBackup() {
             "error"
         );
         return;
+    }
+    // ⚠️ Brīdina, ja ierīcē jau ir darba dati
+    if (data.length > 0) {
+        const confirmed = confirm(
+            "⚠️ Aplikācijā jau ir " +
+            data.length +
+            " ieraksti.\n\n" +
+            "Atjaunojot lokālo backup, pašreizējie " +
+            "darba dati tiks aizvietoti.\n\n" +
+            "Vai tiešām turpināt?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
     }
     // Atjauno ierakstus
     data = Array.isArray(backup.entries)
@@ -4194,24 +4245,91 @@ function restoreImportedBackup() {
         );
         return;
     }
-// ==============================================
-// ⚠️ DROŠĪBAS APSTIPRINĀJUMS
-// ==============================================
-if (data.length > 0) {
-    const confirmed = confirm(
-        "⚠️ Darba režīmā jau ir ievadīti dati.\n\n" +
-        `Pašlaik: ${data.length} ieraksti.\n\n` +
-        "Atjaunojot VISU backup, pašreizējie dati tiks aizvietoti.\n\n" +
-        "Vai tiešām turpināt?"
-    );
-    if (!confirmed) {
+    // ==============================================
+    // ⛔ PĀRBAUDA NEPABEIGTO SINHRONIZĀCIJU
+    // ==============================================
+    let pendingSyncQueue;
+    try {
+        pendingSyncQueue = JSON.parse(
+            localStorage.getItem("syncQueue") || "[]"
+        );
+
+        if (!Array.isArray(pendingSyncQueue)) {
+            throw new Error("Nederīga syncQueue struktūra");
+        }
+    } catch (error) {
+        console.error("syncQueue pārbaudes kļūda:", error);
+        showNotice(
+            "❌ Neizdevās pārbaudīt sinhronizācijas rindu.",
+            "error"
+        );
         return;
     }
-}
+    if (pendingSyncQueue.length > 0) {
+        showNotice(
+            "⚠️ Ir nesinhronizēti ieraksti (" +
+            pendingSyncQueue.length +
+            "). Pirms pilna backup atjaunošanas " +
+            "jāpabeidz sinhronizācija.",
+            "error"
+        );
+        return;
+    }
     // ==============================================
-    // 📝 ATJAUNO IERAKSTUS
+    // ⛔ PĀRBAUDA NEPABEIGTĀS DZĒŠANAS
     // ==============================================
-    data = [...importedBackup.entries];
+    let pendingDeleteQueue;
+    try {
+        pendingDeleteQueue = JSON.parse(
+            localStorage.getItem("deleteQueue") || "[]"
+        );
+        if (!Array.isArray(pendingDeleteQueue)) {
+            throw new Error("Nederīga deleteQueue struktūra");
+        }
+    } catch (error) {
+        console.error("deleteQueue pārbaudes kļūda:", error);
+        showNotice(
+            "❌ Neizdevās pārbaudīt dzēšanas rindu.",
+            "error"
+        );
+        return;
+    }
+    if (pendingDeleteQueue.length > 0) {
+        showNotice(
+            "⚠️ Ir nepabeigtas dzēšanas (" +
+            pendingDeleteQueue.length +
+            "). Pirms pilna backup atjaunošanas " +
+            "jāpabeidz sinhronizācija.",
+            "error"
+        );
+        return;
+    }
+    // ==============================================
+    // ⚠️ DROŠĪBAS APSTIPRINĀJUMS
+    // ==============================================
+        if (data.length > 0) {
+            const confirmed = confirm(
+                "⚠️ Darba režīmā jau ir ievadīti dati.\n\n" +
+                `Pašlaik: ${data.length} ieraksti.\n\n` +
+                "Atjaunojot VISU backup, pašreizējie dati tiks aizvietoti.\n\n" +
+                "Vai tiešām turpināt?"
+                );
+            if (!confirmed) {
+                return;
+            }
+        }
+    // ==============================================
+    // 📝 ATJAUNO PILNA BACKUP IERAKSTUS
+    // ==============================================
+    // Pilns backup paredzēts pārskatiem un Excel.
+    // Šos importētos ierakstus nedrīkst
+    // automātiski nosūtīt PostgreSQL.
+
+    data = importedBackup.entries.map(entry => ({
+        ...entry,
+        syncExcluded: true,
+        syncSource: "full_backup"
+    }));
     // ==============================================
     // 📷 ATJAUNO VISUS APGABALU FOTO
     // ==============================================
